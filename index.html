@@ -2700,6 +2700,12 @@
                 display: none;
             }
         }
+        /* Écran étroit / mobile : l'arche du manifeste reste collée au bord droit */
+        @media (max-width: 940px) {
+            .manifeste-image img {
+                transform: translateX(calc(15.6% + 30px));
+            }
+        }
     </style>
 </head>
 <body>

@@ -113,13 +113,21 @@
         .entrance .l:nth-child(1) { animation-delay: .15s; }
         .entrance .l:nth-child(2) { animation-delay: .5s; }
         .entrance .l:nth-child(3) { animation-delay: .85s; }
+        /* Logo qui se dessine : l'or se dévoile le long des tracés (animation SVG) */
         .entrance .entrance-logo {
-            width: clamp(110px, 20vw, 180px);
+            width: clamp(120px, 22vw, 190px);
             height: auto;
-            opacity: 0;
-            transform: translateY(16px);
-            animation: lReveal 1.2s var(--ease) .15s forwards;
+            aspect-ratio: 528 / 600;
+            overflow: visible;
             filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .35));
+        }
+        .entrance.is-drawn .entrance-logo {
+            animation: logoGlow 1.6s var(--ease) forwards;
+        }
+        @keyframes logoGlow {
+            0% { filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .35)); }
+            45% { filter: drop-shadow(0 0 22px rgba(212, 175, 127, .55)); }
+            100% { filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .35)); }
         }
         @keyframes lReveal {
             to { opacity: 1; transform: none; }
@@ -133,7 +141,9 @@
             margin-top: 20px;
             font-size: clamp(10px, 1.6vw, 13px);
             opacity: 0;
-            animation: fUp .8s var(--ease) 1.6s forwards;
+        }
+        .entrance.is-drawing .tag {
+            animation: fUp .8s var(--ease) 2.5s forwards;
         }
         .entrance .sub {
             font-weight: 400;
@@ -141,7 +151,9 @@
             margin-top: 10px;
             font-size: clamp(10px, 1.2vw, 14px);
             opacity: 0;
-            animation: fUp .8s var(--ease) 2s forwards;
+        }
+        .entrance.is-drawing .sub {
+            animation: fUp .8s var(--ease) 2.9s forwards;
         }
         @keyframes fUp {
             from { opacity: 0; transform: translateY(10px); }
@@ -2480,7 +2492,21 @@
 
     <!-- ENTRÉE -->
     <div class="entrance" id="entrance" role="dialog" aria-label="Ouverture du sanctuaire ORR">
-        <img class="entrance-logo" src="images/orr-logo.webp" alt="ORR" width="528" height="600" />
+        <svg class="entrance-logo" id="orrLogoDraw" viewBox="0 0 528 600" role="img" aria-label="ORR">
+            <defs>
+                <mask id="orrLogoMask" maskUnits="userSpaceOnUse" x="0" y="0" width="528" height="600">
+                    <g fill="none" stroke="#fff">
+                        <set id="orrDraw" attributeName="visibility" to="visible" begin="indefinite"/>
+<path d="M275.0 6.0 C275.2 8.0 276.1 14.0 276.0 18.0 C275.9 22.0 275.3 26.0 274.5 30.0 C273.7 34.0 272.5 38.0 271.0 42.0 C269.5 46.0 267.4 50.0 265.5 54.0 C263.6 58.0 261.3 62.0 259.5 66.0 C257.7 70.0 255.6 74.0 254.5 78.0 C253.4 82.0 252.8 85.7 253.0 90.0 C253.2 94.3 254.1 99.0 256.0 104.0 C257.9 109.0 261.4 115.3 264.5 120.0 C267.6 124.7 271.0 128.0 274.5 132.0 C278.0 136.0 282.2 140.0 285.5 144.0 C288.8 148.0 291.3 151.0 294.0 156.0 C296.7 161.0 300.0 168.7 301.5 174.0 C303.0 179.3 303.2 182.7 303.0 188.0 C302.8 193.3 302.0 200.3 300.0 206.0 C298.0 211.7 294.7 217.0 291.0 222.0 C287.3 227.0 283.5 231.2 278.0 236.0 C272.5 240.8 261.3 248.5 258.0 251.0" stroke-width="36" stroke-linecap="round" stroke-dasharray="285 285" stroke-dashoffset="285"><animate attributeName="stroke-dashoffset" from="285" to="0" begin="orrDraw.begin+0.1s" dur="1.3s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+<path d="M248.0 86.0 C246.3 87.7 240.5 92.3 238.0 96.0 C235.5 99.7 234.2 103.0 233.0 108.0 C231.8 113.0 230.6 121.0 230.5 126.0 C230.4 131.0 231.4 134.0 232.5 138.0 C233.6 142.0 235.0 146.0 237.0 150.0 C239.0 154.0 241.8 158.0 244.5 162.0 C247.2 166.0 250.8 170.0 253.5 174.0 C256.2 178.0 259.1 182.0 261.0 186.0 C262.9 190.0 264.8 193.8 265.0 198.0 C265.2 202.2 262.9 208.8 262.5 211.0" stroke-width="26" stroke-linecap="round" stroke-dasharray="142 142" stroke-dashoffset="142"><animate attributeName="stroke-dashoffset" from="142" to="0" begin="orrDraw.begin+0.55s" dur="0.9s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+<path d="M218.8 87.9 A252 252 0 1 0 287.2 85.2" stroke-width="36" stroke-linecap="round" stroke-dasharray="1517 1517" stroke-dashoffset="1517"><animate attributeName="stroke-dashoffset" from="1517" to="0" begin="orrDraw.begin+0.8s" dur="1.7s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+<path d="M257.8 251.3 A83 83 0 1 0 272.2 416.7 A83 83 0 1 0 257.8 251.3" stroke-width="36" stroke-linecap="round" stroke-dasharray="524 524" stroke-dashoffset="524"><animate attributeName="stroke-dashoffset" from="524" to="0" begin="orrDraw.begin+1.3s" dur="1.0s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+<path d="M264 444 L264 544" stroke-width="60" stroke-linecap="butt" stroke-dasharray="102 102" stroke-dashoffset="102"><animate attributeName="stroke-dashoffset" from="102" to="0" begin="orrDraw.begin+2.2s" dur="0.55s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+                    </g>
+                </mask>
+            </defs>
+            <image href="images/orr-logo.webp" width="528" height="600" mask="url(#orrLogoMask)"/>
+        </svg>
         <p class="tag">Origin Rituals &amp; Revelations</p>
         <p class="sub">Des rituels hérités d'hier pour habiter pleinement aujourd'hui</p>
     </div>
@@ -2975,7 +3001,29 @@
             var entrance = document.getElementById('entrance');
 
             function closeEntrance() { entrance.classList.add('done'); }
-            window.addEventListener('load', function() { setTimeout(closeEntrance, 3200); });
+
+            // Le logo se dessine dès que l'image dorée est chargée
+            var drawStarted = false;
+            function startLogoDraw() {
+                if (drawStarted) return;
+                drawStarted = true;
+                var trigger = document.getElementById('orrDraw');
+                var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (reduce || !trigger || !trigger.beginElement) {
+                    var logo = document.querySelector('#orrLogoDraw image');
+                    if (logo) logo.removeAttribute('mask');
+                } else {
+                    trigger.beginElement();
+                }
+                entrance.classList.add('is-drawing');
+                setTimeout(function() { entrance.classList.add('is-drawn'); }, 2750);
+                setTimeout(closeEntrance, 5200);
+            }
+            var logoPreload = new Image();
+            logoPreload.onload = startLogoDraw;
+            logoPreload.onerror = startLogoDraw;
+            logoPreload.src = 'images/orr-logo.webp';
+            setTimeout(startLogoDraw, 2500);
             entrance.addEventListener('click', closeEntrance);
 
             // NAVBAR SCROLL

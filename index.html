@@ -2703,6 +2703,37 @@
             pointer-events: none;
         }
 
+        /* --- Origines (ordinateur) : grandes photos collées au bord de l'écran,
+               fondu seulement côté texte --- */
+        @media (min-width: 941px) {
+            .og-row > .og-img img {
+                inset: auto;
+                top: 50%;
+                /* grande, mais au plus ~56 % de la largeur de l'écran pour ne pas couvrir le texte */
+                height: min(112%, 45.2vw);
+                width: auto;
+                max-width: none;
+            }
+            .og-row > .og-img:last-child img,
+            .og-row > .og-img:last-child:hover img {
+                right: -28px; /* compense la marge de la section */
+                transform: translate(1.9%, -50%);
+                -webkit-mask-image: radial-gradient(ellipse 120% 70% at 100% 52%, #000 55%, rgba(0,0,0,.6) 78%, transparent 100%);
+                mask-image: radial-gradient(ellipse 120% 70% at 100% 52%, #000 55%, rgba(0,0,0,.6) 78%, transparent 100%);
+            }
+            .og-row > .og-img:first-child img,
+            .og-row > .og-img:first-child:hover img {
+                left: -28px;
+                transform: translate(-11%, -50%);
+                -webkit-mask-image: radial-gradient(ellipse 120% 70% at 0% 52%, #000 55%, rgba(0,0,0,.6) 78%, transparent 100%);
+                mask-image: radial-gradient(ellipse 120% 70% at 0% 52%, #000 55%, rgba(0,0,0,.6) 78%, transparent 100%);
+            }
+            .og-row > .og-img:first-child img[src*="origine-4"],
+            .og-row > .og-img:first-child:hover img[src*="origine-4"] {
+                transform: translate(-12.4%, -50%);
+            }
+        }
+
         /* --- Fumée d'encens animée sur les photos Origines --- */
         .og-img .fx-smoke {
             position: absolute;
@@ -3921,6 +3952,7 @@
                     c.style.bottom = 'auto';
                     c.style.width = img.offsetWidth + 'px';
                     c.style.height = img.offsetHeight + 'px';
+                    c.style.transform = getComputedStyle(img).transform;
                     W = img.offsetWidth; H = img.offsetHeight;
                     c.width = W * dpr; c.height = H * dpr;
                     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

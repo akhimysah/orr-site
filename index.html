@@ -2776,6 +2776,14 @@
             position: relative;
             z-index: 3; /* la goutte passe devant le texte quand elle coule */
         }
+        .fx-glass-screen {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9980; /* sous le menu, au-dessus du contenu */
+            pointer-events: none;
+        }
         .fx-glass {
             position: absolute;
             inset: 0;
@@ -4039,6 +4047,110 @@
                     if (vis && !running) { running = true; measure(); raf = requestAnimationFrame(frame); }
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
                 }).observe(hero);
+            })();
+
+            // Sur tout le site : gouttes dorées sur la « vitre » de l'écran, poussées par le défilement
+            (function glassRain() {
+                var hero = document.querySelector('.hero');
+                var img = new Image();
+                img.src = 'images/orr-logo.webp';
+                var c = document.createElement('canvas');
+                c.className = 'fx-glass-screen';
+                c.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(c);
+                var ctx = c.getContext('2d');
+                var dpr = Math.min(window.devicePixelRatio || 1, 2);
+                var W = 0, H = 0, drops = [], lastY = window.scrollY || 0, cool = 0, momentum = 0;
+                function resize() {
+                    W = window.innerWidth; H = window.innerHeight;
+                    c.width = W * dpr; c.height = H * dpr;
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
+                resize();
+                window.addEventListener('resize', resize);
+                function spawn(now) {
+                    var small = W < 700;
+                    var dw = (small ? 13 : 17) * (.85 + Math.random() * .4);
+                    var side = Math.random() < .5 ? Math.random() * .38 : .62 + Math.random() * .34;
+                    drops.push({
+                        x0: W * side, y: 70 + Math.random() * H * .12,
+                        dw: dw, dh: dw * 1.55, born: now, trail: [], beads: [], lastBead: 0,
+                        ph1: Math.random() * 6.28, ph2: Math.random() * 6.28, grip: Math.random(), done: false
+                    });
+                }
+                function px(d, y) { return d.x0 + Math.sin(y / 43 + d.ph1) * d.dw * .7 + Math.sin(y / 14 + d.ph2) * d.dw * .22; }
+                function frame(now) {
+                    var y = window.scrollY || window.pageYOffset;
+                    var delta = y - lastY; lastY = y;
+                    // l'élan du défilement vers le bas pousse les gouttes ; vers le haut, elles s'arrêtent
+                    momentum = momentum * .9 + Math.max(0, delta) * .1;
+                    var heroEnd = hero ? hero.offsetHeight * .9 : 0;
+                    var active = drops.filter(function(d) { return !d.done; }).length;
+                    if (y > heroEnd && momentum > 1.2 && active < (W < 700 ? 1 : 2) && now > cool && Math.random() < .04) {
+                        spawn(now); cool = now + 1600 + Math.random() * 2200;
+                    }
+                    ctx.clearRect(0, 0, W, H);
+                    for (var i = drops.length - 1; i >= 0; i--) {
+                        var d = drops[i];
+                        var grow = Math.min((now - d.born) / 450, 1);
+                        if (!d.done) {
+                            // à-coups : la goutte accroche puis repart
+                            d.grip += .03 + Math.random() * .02;
+                            var slip = .45 + .55 * Math.max(0, Math.sin(d.grip * 3));
+                            var adv = grow < 1 ? 0 : (momentum * .85 + .12) * slip;
+                            d.y += adv;
+                            var x = px(d, d.y);
+                            var last = d.trail[d.trail.length - 1];
+                            if (!last || Math.hypot(x - last.x, d.y - last.y) > 2) {
+                                d.trail.push({ x: x, y: d.y, w: d.dw * (.5 + Math.random() * .16), t: now });
+                                if (d.y - d.lastBead > 30 + Math.random() * 50) {
+                                    d.lastBead = d.y;
+                                    d.beads.push({ x: x + (Math.random() - .5) * d.dw * .6, y: d.y - d.dh * .25, r: d.dw * (.1 + Math.random() * .15), t: now });
+                                }
+                            }
+                            if (d.y > H + 40) d.done = true;
+                            d.speed = adv;
+                        }
+                        // trace mouillée
+                        var alive = false;
+                        ctx.lineCap = 'round';
+                        for (var j = 1; j < d.trail.length; j++) {
+                            var a = d.trail[j - 1], b = d.trail[j];
+                            var al = .58 * Math.exp(-(now - b.t) / 7000);
+                            if (al < .01) continue;
+                            alive = true;
+                            ctx.strokeStyle = 'rgba(200, 158, 102,' + al + ')';
+                            ctx.lineWidth = b.w;
+                            ctx.beginPath(); ctx.moveTo(a.x, a.y - d.dh * .3); ctx.lineTo(b.x, b.y - d.dh * .3); ctx.stroke();
+                            ctx.strokeStyle = 'rgba(255, 246, 228,' + (al * .7) + ')';
+                            ctx.lineWidth = Math.max(1, b.w * .22);
+                            ctx.beginPath(); ctx.moveTo(a.x - b.w * .22, a.y - d.dh * .3); ctx.lineTo(b.x - b.w * .22, b.y - d.dh * .3); ctx.stroke();
+                        }
+                        for (var q = 0; q < d.beads.length; q++) {
+                            var bd = d.beads[q];
+                            var ba = .85 * Math.exp(-(now - bd.t) / 7000);
+                            if (ba < .01) continue;
+                            alive = true;
+                            ctx.fillStyle = 'rgba(204, 164, 110,' + ba + ')';
+                            ctx.beginPath(); ctx.arc(bd.x, bd.y, bd.r, 0, 6.283); ctx.fill();
+                            ctx.fillStyle = 'rgba(255, 248, 235,' + (ba * .9) + ')';
+                            ctx.beginPath(); ctx.arc(bd.x - bd.r * .35, bd.y - bd.r * .35, bd.r * .3, 0, 6.283); ctx.fill();
+                        }
+                        // la goutte elle-même
+                        if (!d.done) {
+                            alive = true;
+                            var st = Math.min((d.speed || 0) * .05, .45);
+                            var w2 = d.dw * grow * (1 - st * .3), h2 = d.dh * grow * (1 + st);
+                            var x2 = px(d, d.y);
+                            if (img.complete && img.naturalWidth) ctx.drawImage(img, 228, 438, 72, 112, x2 - w2 / 2, d.y - h2 * .55, w2, h2);
+                            ctx.fillStyle = 'rgba(255, 250, 240, .6)';
+                            ctx.beginPath(); ctx.ellipse(x2 - w2 * .14, d.y - h2 * .05, Math.max(.5, w2 * .08), Math.max(.5, h2 * .12), 0, 0, 6.283); ctx.fill();
+                        }
+                        if (!alive) drops.splice(i, 1);
+                    }
+                    requestAnimationFrame(frame);
+                }
+                requestAnimationFrame(frame);
             })();
 
             var ticking = false;

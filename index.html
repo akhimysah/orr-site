@@ -2789,10 +2789,9 @@
         }
         .fx-glass {
             position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
+            left: 0;
+            top: 0;
+            z-index: 5;
             pointer-events: none;
         }
 
@@ -3951,6 +3950,7 @@
             // La goutte du logo glisse sur la « vitre » au défilement et laisse une trace mouillée
             (function glassDrop() {
                 var hero = document.querySelector('.hero');
+                var next = document.getElementById('manifeste');
                 var logo = document.getElementById('heroLogo');
                 var svgDrop = document.getElementById('heroDrop');
                 if (!hero || !logo || !svgDrop) return;
@@ -3959,26 +3959,35 @@
                 var c = document.createElement('canvas');
                 c.className = 'fx-glass';
                 c.setAttribute('aria-hidden', 'true');
-                hero.appendChild(c);
+                // la « vitre » couvre le haut de page ET le manifeste : la goutte ne disparaît plus à la limite
+                document.body.appendChild(c);
                 var ctx = c.getContext('2d');
                 var dpr = Math.min(window.devicePixelRatio || 1, 2);
-                var W = 0, H = 0, k = 1, x0 = 0, y0 = 0;
-                var P = 0, shown = 0, trail = [], beads = [], lastBead = 0, fadeOut = 0;
+                var W = 0, H = 0, k = 1, x0 = 0, y0 = 0, yEnd = 0, S = 1;
+                var P = 0, shown = 0, trail = [], beads = [], lastBead = 0, fadeOut = 0, absorbed = 0;
                 var running = false, raf = 0, ph1 = 0, ph2 = 0;
                 var DRY = 7000; // durée de séchage de la trace (ms)
                 function newPath() { ph1 = Math.random() * 6.28; ph2 = Math.random() * 6.28; }
                 newPath();
                 function measure() {
-                    W = hero.offsetWidth; H = hero.offsetHeight;
+                    var hr = hero.getBoundingClientRect(), lr = logo.getBoundingClientRect();
+                    var top = hr.top + (window.scrollY || window.pageYOffset);
+                    W = document.documentElement.clientWidth;
+                    H = hero.offsetHeight + (next ? next.offsetHeight : 0);
+                    c.style.top = top + 'px';
+                    c.style.width = W + 'px';
+                    c.style.height = H + 'px';
                     c.width = W * dpr; c.height = H * dpr;
                     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                    var hr = hero.getBoundingClientRect(), lr = logo.getBoundingClientRect();
                     k = lr.width / 528 || .2;
-                    x0 = lr.left - hr.left + 264 * k;
+                    x0 = lr.left + 264 * k;
                     y0 = lr.top - hr.top + 494 * k;
+                    yEnd = H - 70;
+                    // la goutte reste à l'écran : elle descend jusqu'à ~60 % de la hauteur de l'écran
+                    S = Math.max(yEnd - window.innerHeight * .6, 200);
                 }
                 // à-coups doux : la goutte ralentit puis repart, comme sur une vraie vitre
-                function f(p) { return Math.min(1.08, p + .014 * Math.sin(p * 6.283 * 6)); }
+                function f(p) { return Math.min(1, p + .012 * Math.sin(p * 6.283 * 9)); }
                 // trajectoire : grandes ondulations lentes, sans tremblement
                 function pathX(y, dw) {
                     return x0 + Math.sin(y / 58 + ph1) * dw * .55 + Math.sin(y / 23 + ph2) * dw * .1;
@@ -4036,7 +4045,7 @@
                 function reset(now) {
                     // la trace s'efface en douceur, puis la goutte se reforme dans le logo
                     fadeOut = now;
-                    P = 0; shown = 0;
+                    P = 0; shown = 0; absorbed = 0;
                     svgDrop.style.visibility = '';
                     svgDrop.classList.remove('reform');
                     void svgDrop.getBoundingClientRect();
@@ -4053,13 +4062,21 @@
                         if (fade <= 0) { fadeOut = 0; trail = []; beads = []; lastBead = 0; newPath(); fade = 0; }
                     }
                     if (!fadeOut) {
-                        var p = Math.min(Math.max(y / (H * .8), 0), 1);
+                        var p = Math.min(Math.max(y / S, 0), 1);
                         if (p > P) P = p;                     // la goutte ne remonte pas
                     }
                     var prev = shown;
                     if (!fadeOut) shown += (f(P) - shown) * .085;   // mouvement amorti
-                    var moving = !fadeOut && shown > .004;
-                    var dy = y0 + shown * (H + dh - y0);
+                    // arrivée au bout : la goutte s'étale et est absorbée
+                    if (!fadeOut && !absorbed && shown > .995) {
+                        absorbed = now;
+                        // il reste une petite perle là où la goutte s'est arrêtée
+                        var ey = y0 + shown * (yEnd - y0);
+                        beads.push({ x: pathX(ey, 72 * k * 1.35), y: ey, r: 72 * k * 1.35 * .2, t: now });
+                    }
+                    var ab = absorbed ? Math.min((now - absorbed) / 900, 1) : 0;
+                    var moving = !fadeOut && shown > .004 && ab < 1;
+                    var dy = y0 + shown * (yEnd - y0);
                     var dx = pathX(dy, dw);
                     if (moving) {
                         svgDrop.style.visibility = 'hidden';
@@ -4077,24 +4094,27 @@
                     if (moving) {
                         var speed = Math.abs(shown - prev) * H;
                         var st = Math.min(speed * .035, .4);
-                        var w2 = dw * (1 - st * .28), h2 = dh * (1 + st);
+                        var w2 = dw * (1 - st * .28) * (1 + ab * .5), h2 = dh * (1 + st) * (1 - ab * .75);
+                        ctx.globalAlpha = 1 - ab;
                         // ombre portée douce, puis la goutte dorée et son reflet
                         ctx.fillStyle = 'rgba(35, 6, 10, .28)';
                         ctx.beginPath(); ctx.ellipse(dx + w2 * .08, dy + h2 * .12, w2 * .42, h2 * .36, 0, 0, 6.283); ctx.fill();
                         if (img.complete && img.naturalWidth) ctx.drawImage(img, 228, 438, 72, 112, dx - w2 / 2, dy - h2 * .55, w2, h2);
                         ctx.fillStyle = 'rgba(255, 250, 240, .6)';
                         ctx.beginPath(); ctx.ellipse(dx - w2 * .15, dy - h2 * .02, w2 * .07, h2 * .11, -.3, 0, 6.283); ctx.fill();
+                        ctx.globalAlpha = 1;
                     }
                     if (running) raf = requestAnimationFrame(frame);
                 }
                 measure();
                 window.addEventListener('resize', measure);
                 img.addEventListener('load', measure);
+                window.addEventListener('load', measure);
                 new IntersectionObserver(function(es) {
                     var vis = es[0].isIntersecting;
                     if (vis && !running) { running = true; measure(); raf = requestAnimationFrame(frame); }
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
-                }).observe(hero);
+                }).observe(c);
             })();
 
             var ticking = false;

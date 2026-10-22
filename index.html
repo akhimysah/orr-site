@@ -412,8 +412,10 @@
             gap: 26px;
         }
         .hero-logo {
-            height: clamp(84px, 16vw, 120px);
+            height: clamp(76px, 14vw, 108px);
             width: auto;
+            aspect-ratio: 528 / 600;
+            overflow: visible;
             opacity: .96;
             animation: heroIn 1.2s var(--ease) .2s both;
         }
@@ -2769,6 +2771,17 @@
         .og-row:nth-child(even) .og-img .fx-smoke { animation-delay: -3.5s; }
         .og-img.in .fx-smoke { opacity: 1; }
 
+        /* --- Haut de page : la goutte du logo coule au défilement --- */
+        .hero-logo {
+            position: relative;
+            z-index: 3; /* la goutte passe devant le texte quand elle coule */
+        }
+        #heroDrop {
+            transform-box: view-box;
+            transform-origin: 264px 446px;
+            will-change: transform;
+        }
+
         /* --- Dunes en mouvement (section Créations) --- */
         #creations .creations-bg {
             inset: -4% -16%;
@@ -2913,7 +2926,21 @@
             <div class="hero-bg" aria-hidden="true"></div>
             <div class="hero-ovl" aria-hidden="true"></div>
             <div class="hero-core">
-                <img class="hero-logo" src="https://www.image2url.com/r2/default/images/1786963418142-bf624e31-8ef5-48ec-9139-ce2e816b8794.png" alt="ORR" width="200" height="120" fetchpriority="high" />
+                <svg class="hero-logo" id="heroLogo" viewBox="0 0 528 600" role="img" aria-label="ORR">
+                    <defs>
+                        <mask id="heroLogoMask" maskUnits="userSpaceOnUse" x="0" y="0" width="528" height="600">
+                            <rect width="528" height="600" fill="#fff"/>
+                            <rect x="228" y="438" width="72" height="112" fill="#000"/>
+                        </mask>
+                        <clipPath id="heroDropClip"><rect x="228" y="438" width="72" height="112"/></clipPath>
+                    </defs>
+                    <image href="images/orr-logo.webp" width="528" height="600" mask="url(#heroLogoMask)"/>
+                    <!-- filet doré qui relie la goutte au logo quand elle coule -->
+                    <path id="heroTrail" d="M264 446 L264 450" fill="none" stroke="#C9A06A" stroke-linecap="round" stroke-width="0"/>
+                    <g id="heroDrop">
+                        <image href="images/orr-logo.webp" width="528" height="600" clip-path="url(#heroDropClip)"/>
+                    </g>
+                </svg>
                 <p class="hero-label">Origin Rituals &amp; Revelations</p>
                 <h1 class="hero-title">Des rituels hérités d'hier<br />pour habiter pleinement aujourd'hui</h1>
                 <div class="hero-line" aria-hidden="true"></div>
@@ -3909,6 +3936,33 @@
             bar.setAttribute('aria-hidden', 'true');
             document.body.appendChild(bar);
             var heroBg = document.querySelector('.hero-bg');
+            var heroSec = document.querySelector('.hero');
+            var heroLogo = document.getElementById('heroLogo');
+            var heroDrop = document.getElementById('heroDrop');
+            var heroTrail = document.getElementById('heroTrail');
+            // La goutte s'étire, puis coule jusqu'en bas de la section en laissant un filet doré
+            function drip(y) {
+                if (!heroSec || !heroLogo || !heroDrop) return;
+                var H = heroSec.offsetHeight;
+                var p = Math.min(Math.max(y / (H * .75), 0), 1);
+                var lr = heroLogo.getBoundingClientRect();
+                var k = lr.width / 528 || 1;
+                var D = (heroSec.getBoundingClientRect().bottom - (lr.top + 449 * k)) / k + 30;
+                var s = Math.min(p / .12, 1);
+                var q = Math.max((p - .12) / .88, 0);
+                // descente régulière : la goutte reste visible pendant qu'on descend
+                var ty = q * D;
+                // elle s'étire, puis grossit un peu en tombant pour rester bien visible
+                var sy = 1 + .38 * s + .45 * q;
+                var sx = 1 - .14 * s + .55 * q;
+                heroDrop.style.transform = 'translate(0px, ' + ty.toFixed(1) + 'px) scale(' + sx.toFixed(3) + ', ' + sy.toFixed(3) + ')';
+                if (heroTrail) {
+                    var w = s * 9 * Math.pow(1 - q, 4);
+                    heroTrail.setAttribute('d', 'M264 446 L264 ' + (452 + ty).toFixed(1));
+                    heroTrail.setAttribute('stroke-width', w.toFixed(2));
+                    heroTrail.style.opacity = (s * Math.pow(1 - q, 2)).toFixed(3);
+                }
+            }
             var ticking = false;
             function onScroll() {
                 if (ticking) return;
@@ -3918,6 +3972,7 @@
                     var max = document.documentElement.scrollHeight - window.innerHeight;
                     bar.style.transform = 'scaleX(' + (max > 0 ? Math.min(y / max, 1) : 0) + ')';
                     if (heroBg && y < window.innerHeight * 1.2) heroBg.style.translate = '0 ' + (y * 0.35).toFixed(1) + 'px';
+                    if (y < window.innerHeight * 1.5) drip(y);
                     ticking = false;
                 });
             }

@@ -113,6 +113,14 @@
         .entrance .l:nth-child(1) { animation-delay: .15s; }
         .entrance .l:nth-child(2) { animation-delay: .5s; }
         .entrance .l:nth-child(3) { animation-delay: .85s; }
+        .entrance .entrance-logo {
+            width: clamp(110px, 20vw, 180px);
+            height: auto;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: lReveal 1.2s var(--ease) .15s forwards;
+            filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .35));
+        }
         @keyframes lReveal {
             to { opacity: 1; transform: none; }
         }
@@ -660,6 +668,13 @@
             text-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
             opacity: 0;
             animation: mFadeUp 1s cubic-bezier(.4, 0, .2, 1) 0.8s forwards;
+        }
+        .manifeste-claim-logo {
+            display: inline-block;
+            height: 2.2em;
+            width: auto;
+            vertical-align: middle;
+            margin-right: .3em;
         }
         .manifeste-claim strong {
             font-family: 'Playfair Display', Georgia, serif;
@@ -1606,6 +1621,11 @@
             color: var(--gold);
             font-size: clamp(38px, 6vw, 56px);
         }
+        .foot-logo img {
+            display: inline-block;
+            width: clamp(64px, 8vw, 88px);
+            height: auto;
+        }
         .foot-tag {
             font-size: 11px;
             letter-spacing: .4em;
@@ -2460,9 +2480,7 @@
 
     <!-- ENTRÉE -->
     <div class="entrance" id="entrance" role="dialog" aria-label="Ouverture du sanctuaire ORR">
-        <div class="letters" aria-hidden="true">
-            <span class="l">O</span><span class="l">R</span><span class="l">R</span>
-        </div>
+        <img class="entrance-logo" src="images/orr-logo.webp" alt="ORR" width="528" height="600" />
         <p class="tag">Origin Rituals &amp; Revelations</p>
         <p class="sub">Des rituels hérités d'hier pour habiter pleinement aujourd'hui</p>
     </div>
@@ -2539,7 +2557,7 @@
                         Il connaît le rythme, les saisons, les gestes et les silences.
                     </p>
                     <p class="manifeste-claim">
-                        <strong>ORR</strong> — Retrouver le langage oublié.
+                        <img class="manifeste-claim-logo" src="images/orr-logo.webp" alt="ORR" width="528" height="600" /> — Retrouver le langage oublié.
                     </p>
                     <a href="#creations" class="manifeste-cta">
                         DÉCOUVRIR NOS ORIGINES <span aria-hidden="true">→</span>
@@ -2867,7 +2885,7 @@
 
     <!-- ===== FOOTER ===== -->
     <footer>
-        <div class="foot-logo">ORR</div>
+        <div class="foot-logo"><img src="images/orr-logo.webp" alt="ORR" width="528" height="600" loading="lazy" /></div>
         <p class="foot-tag">Origin Rituals &amp; Revelations</p>
         <div class="foot-social">
             <a href="#" aria-label="Instagram" onclick="event.preventDefault();toast('Suivez ORR sur Instagram @orr.universe')"><i class="fa-brands fa-instagram"></i></a>

@@ -3924,10 +3924,10 @@
             puff.width = puff.height = 64;
             var pg = puff.getContext('2d');
             var pgr = pg.createRadialGradient(32, 32, 0, 32, 32, 32);
-            // gris chaud : se voit sur le fond crème comme une vraie fumée d'encens
-            pgr.addColorStop(0, 'rgba(150, 132, 120, .9)');
-            pgr.addColorStop(.45, 'rgba(165, 150, 140, .4)');
-            pgr.addColorStop(1, 'rgba(170, 155, 145, 0)');
+            // fumée blanche
+            pgr.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            pgr.addColorStop(.45, 'rgba(255, 253, 250, .5)');
+            pgr.addColorStop(1, 'rgba(255, 253, 250, 0)');
             pg.fillStyle = pgr;
             pg.fillRect(0, 0, 64, 64);
 
@@ -3984,7 +3984,7 @@
                         p.y += p.vy;
                         p.r += .07 * k;
                         var sway = Math.sin(p.ph + p.life * .03) * (4 + f * 22) * k + Math.sin(t * .004) * f * 18 * k;
-                        ctx.globalAlpha = .27 * Math.sin(Math.PI * Math.min(f * 1.6, 1)) * (1 - f);
+                        ctx.globalAlpha = .38 * Math.sin(Math.PI * Math.min(f * 1.6, 1)) * (1 - f);
                         ctx.drawImage(puff, p.x + sway - p.r, p.y - p.r, p.r * 2, p.r * 2);
                     }
                     ctx.globalAlpha = 1;

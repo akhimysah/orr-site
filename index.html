@@ -706,13 +706,16 @@
             to { opacity: 1; transform: none; }
         }
         .manifeste-image {
-            flex: 1;
-            max-width: 50%;
+            flex: 1.4;
+            max-width: 62%;
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
         }
         .manifeste-image img {
-            width: 100%;
+            /* Image agrandie : déborde un peu, les bords fondus restent invisibles */
+            width: 120%;
+            max-width: none;
+            margin: 0 -10%;
             height: auto;
             display: block;
             /* Fond l'image dans le fond rouge : bords et bas qui disparaissent en douceur */
@@ -2041,7 +2044,9 @@
                 justify-content: center;
             }
             .manifeste-image img {
-                max-width: 80%;
+                width: 118%;
+                max-width: none;
+                margin: 0 -9%;
             }
             #fondatrice {
                 padding: 80px 20px;
@@ -2174,9 +2179,6 @@
             }
             .manifeste-content {
                 gap: 20px;
-            }
-            .manifeste-image img {
-                max-width: 100%;
             }
             .manifeste-text {
                 padding: 0;

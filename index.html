@@ -124,6 +124,27 @@
         .entrance.is-drawn .entrance-logo {
             animation: logoGlow 1.6s var(--ease) forwards;
         }
+        #orrDrop {
+            /* repère du logo : le centre de la goutte est vers (264, 490) */
+            transform-box: view-box;
+            transform-origin: 264px 490px;
+        }
+        /* remous doré à l'impact de la goutte */
+        .fx-ripple {
+            position: fixed;
+            z-index: 10002;
+            width: 16px;
+            height: 16px;
+            margin: -8px 0 0 -8px;
+            border: 1.5px solid rgba(212, 175, 127, .9);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fxRipple 1.6s cubic-bezier(.16, 1, .3, 1) forwards;
+        }
+        @keyframes fxRipple {
+            0% { transform: scale(.2, .07); opacity: 1; }
+            100% { transform: scale(16, 5); opacity: 0; }
+        }
         @keyframes logoGlow {
             0% { filter: drop-shadow(0 4px 18px rgba(0, 0, 0, .35)); }
             45% { filter: drop-shadow(0 0 22px rgba(212, 175, 127, .55)); }
@@ -2837,11 +2858,20 @@
 <path d="M248.0 86.0 C246.3 87.7 240.5 92.3 238.0 96.0 C235.5 99.7 234.2 103.0 233.0 108.0 C231.8 113.0 230.6 121.0 230.5 126.0 C230.4 131.0 231.4 134.0 232.5 138.0 C233.6 142.0 235.0 146.0 237.0 150.0 C239.0 154.0 241.8 158.0 244.5 162.0 C247.2 166.0 250.8 170.0 253.5 174.0 C256.2 178.0 259.1 182.0 261.0 186.0 C262.9 190.0 264.8 193.8 265.0 198.0 C265.2 202.2 262.9 208.8 262.5 211.0" stroke-width="26" stroke-linecap="round" stroke-dasharray="142 142" stroke-dashoffset="142"><animate attributeName="stroke-dashoffset" from="142" to="0" begin="orrDraw.begin+0.55s" dur="0.9s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
 <path d="M218.8 87.9 A252 252 0 1 0 287.2 85.2" stroke-width="36" stroke-linecap="round" stroke-dasharray="1517 1517" stroke-dashoffset="1517"><animate attributeName="stroke-dashoffset" from="1517" to="0" begin="orrDraw.begin+0.8s" dur="1.7s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
 <path d="M257.8 251.3 A83 83 0 1 0 272.2 416.7 A83 83 0 1 0 257.8 251.3" stroke-width="36" stroke-linecap="round" stroke-dasharray="524 524" stroke-dashoffset="524"><animate attributeName="stroke-dashoffset" from="524" to="0" begin="orrDraw.begin+1.3s" dur="1.0s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
+                    </g>
+                </mask>
+                <!-- la goutte est séparée : elle se dessine puis tombe et ouvre le site -->
+                <mask id="orrDropMask" maskUnits="userSpaceOnUse" x="0" y="0" width="528" height="600">
+                    <g fill="none" stroke="#fff">
 <path d="M264 444 L264 544" stroke-width="60" stroke-linecap="butt" stroke-dasharray="102 102" stroke-dashoffset="102"><animate attributeName="stroke-dashoffset" from="102" to="0" begin="orrDraw.begin+2.2s" dur="0.55s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.45 0 0.25 1"/></path>
                     </g>
                 </mask>
+                <clipPath id="orrDropClip"><rect x="228" y="438" width="72" height="112"/></clipPath>
             </defs>
             <image href="images/orr-logo.webp" width="528" height="600" mask="url(#orrLogoMask)"/>
+            <g id="orrDrop">
+                <image href="images/orr-logo.webp" width="528" height="600" clip-path="url(#orrDropClip)" mask="url(#orrDropMask)"/>
+            </g>
         </svg>
         <p class="tag">Origin Rituals &amp; Revelations</p>
         <p class="sub">Des rituels hérités d'hier pour habiter pleinement aujourd'hui</p>
@@ -3341,14 +3371,69 @@
                 var trigger = document.getElementById('orrDraw');
                 var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                 if (reduce || !trigger || !trigger.beginElement) {
-                    var logo = document.querySelector('#orrLogoDraw image');
-                    if (logo) logo.removeAttribute('mask');
+                    document.querySelectorAll('#orrLogoDraw image').forEach(function(im) { im.removeAttribute('mask'); });
                 } else {
                     trigger.beginElement();
                 }
                 entrance.classList.add('is-drawing');
                 setTimeout(function() { entrance.classList.add('is-drawn'); }, 2750);
-                setTimeout(closeEntrance, 5200);
+                setTimeout(reduce ? closeEntrance : dropAndOpen, reduce ? 3500 : 3500);
+            }
+
+            // La goutte se détache, tombe, fait un remous doré et ouvre le site
+            function dropAndOpen() {
+                var svg = document.getElementById('orrLogoDraw');
+                var drop = document.getElementById('orrDrop');
+                if (entrance.classList.contains('done')) return;
+                if (!svg || !drop || !drop.animate) { closeEntrance(); return; }
+                // sécurité : l'accueil s'ouvre quoi qu'il arrive
+                setTimeout(closeEntrance, 6000);
+                var sr = svg.getBoundingClientRect();
+                var k = sr.width / 528;
+                var x = sr.left + 264 * k;
+                var impactY = Math.max(sr.top + 560 * k, Math.min(window.innerHeight * .86, window.innerHeight - 48));
+                var d = (impactY - (sr.top + 544 * k)) / k;
+                var fall = drop.animate([
+                    { transform: 'translate(0, 0) scale(1, 1)', easing: 'ease-in-out' },
+                    { transform: 'translate(0, -8px) scale(1.08, .92)', offset: .2, easing: 'ease-in-out' },
+                    { transform: 'translate(0, 4px) scale(.94, 1.08)', offset: .34, easing: 'cubic-bezier(.55, 0, 1, .45)' },
+                    { transform: 'translate(0, ' + d.toFixed(1) + 'px) scale(.8, 1.32)' }
+                ], { duration: 1200, fill: 'forwards' });
+                fall.onfinish = function() {
+                    drop.style.opacity = '0';
+                    ripple(x, impactY);
+                    openFrom(x, impactY);
+                };
+            }
+            function ripple(x, y) {
+                for (var i = 0; i < 3; i++) {
+                    var rg = document.createElement('span');
+                    rg.className = 'fx-ripple';
+                    rg.style.left = x + 'px';
+                    rg.style.top = y + 'px';
+                    rg.style.animationDelay = (i * 0.18) + 's';
+                    document.body.appendChild(rg);
+                    setTimeout(function(el) { return function() { el.remove(); }; }(rg), 2200);
+                }
+            }
+            function openFrom(x, y) {
+                var R = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y)) + 80;
+                var start = 0, delay = 220, dur = 1250;
+                function ease(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+                function step(now) {
+                    if (!start) start = now;
+                    var t = Math.min(Math.max((now - start - delay) / dur, 0), 1);
+                    var rad = ease(t) * R;
+                    var m = 'radial-gradient(circle at ' + x + 'px ' + y + 'px, transparent ' + rad.toFixed(1) + 'px, #000 ' + (rad + 70).toFixed(1) + 'px)';
+                    entrance.style.webkitMaskImage = m;
+                    entrance.style.maskImage = m;
+                    if (t < 1 && !entrance.classList.contains('done')) requestAnimationFrame(step);
+                    else {
+                        closeEntrance();
+                        setTimeout(function() { entrance.style.webkitMaskImage = ''; entrance.style.maskImage = ''; }, 800);
+                    }
+                }
+                requestAnimationFrame(step);
             }
             var logoPreload = new Image();
             logoPreload.onload = startLogoDraw;

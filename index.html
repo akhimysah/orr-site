@@ -715,6 +715,9 @@
             width: 100%;
             height: auto;
             display: block;
+            /* Fond l'image dans le fond rouge : bords et bas qui disparaissent en douceur */
+            -webkit-mask-image: radial-gradient(ellipse 56% 60% at 50% 40%, #000 52%, rgba(0,0,0,.6) 72%, transparent 100%);
+            mask-image: radial-gradient(ellipse 56% 60% at 50% 40%, #000 52%, rgba(0,0,0,.6) 72%, transparent 100%);
         }
 
         /* ===== ORIGINES ===== */

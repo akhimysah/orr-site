@@ -738,6 +738,21 @@
             display: flex;
             justify-content: center;
         }
+        /* La serviette déborde sous la section (seul le bas de l'image dépasse) */
+        @supports (overflow: clip) {
+            .hero-manifeste {
+                overflow: visible;
+                overflow-x: clip;
+            }
+            .manifeste-image {
+                margin-bottom: calc(-6.5vw - 85px);
+            }
+            @media (max-width: 940px) {
+                .manifeste-image {
+                    margin-bottom: calc(-15.2vw - 36px);
+                }
+            }
+        }
         .manifeste-image img {
             /* Image agrandie : déborde un peu, les bords fondus restent invisibles */
             width: 120%;
@@ -745,9 +760,10 @@
             margin: 0 -10%;
             height: auto;
             display: block;
-            /* Fond l'image dans le fond rouge : bords et bas qui disparaissent en douceur */
-            -webkit-mask-image: radial-gradient(ellipse 56% 60% at 50% 40%, #000 52%, rgba(0,0,0,.6) 72%, transparent 100%);
-            mask-image: radial-gradient(ellipse 56% 60% at 50% 40%, #000 52%, rgba(0,0,0,.6) 72%, transparent 100%);
+            /* Le fondu est intégré au fichier : bords et bas qui disparaissent en douceur,
+               sauf la serviette qui reste visible et retombe sur la section suivante */
+            position: relative;
+            z-index: 4;
         }
 
         /* ===== ORIGINES ===== */

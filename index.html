@@ -823,38 +823,6 @@
             width: 100%;
             height: auto;
         }
-        .orr-tri-hint {
-            display: none;
-        }
-        @media (max-width: 940px) {
-            /* mobile : l'image garde une hauteur lisible et se fait glisser */
-            .orr-tri-scroll {
-                overflow-x: auto;
-                scrollbar-width: none;
-            }
-            .orr-tri-scroll::-webkit-scrollbar {
-                display: none;
-            }
-            .orr-wide img {
-                width: auto;
-                height: min(78vh, 620px);
-                max-width: none;
-            }
-            .orr-tri-hint {
-                display: block;
-                position: absolute;
-                left: 0;
-                right: 0;
-                bottom: 14px;
-                text-align: center;
-                font-size: 10px;
-                letter-spacing: .35em;
-                text-transform: uppercase;
-                color: rgba(237, 224, 212, .85);
-                text-shadow: 0 1px 6px rgba(0, 0, 0, .6);
-                pointer-events: none;
-            }
-        }
 
         /* ===== ORIGINES ===== */
         #origine {
@@ -3104,10 +3072,12 @@
         <section class="orr-tri" id="orr" aria-label="Ce qu'est ORR">
             <div class="orr-tri-scroll">
                 <figure class="orr-wide reveal">
+                    <picture>
+                    <source media="(max-width: 940px)" srcset="images/orr-essence-mobile.webp" width="941" height="1672" />
                     <img src="images/orr-essence.webp" width="1672" height="941" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens. C'est aussi la transmission : des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre. Mais ORR, c'est surtout une qualité de présence : une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
+                    </picture>
                 </figure>
             </div>
-            <p class="orr-tri-hint" aria-hidden="true">Faites glisser &rarr;</p>
         </section>
 
         <!-- ===== CRÉATIONS AVEC IMAGE DE FOND ===== -->

@@ -2860,6 +2860,14 @@
             from { transform: scale(.15); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
+        .fx-goldrain {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* derrière les textes et les photos */
+            pointer-events: none;
+        }
         .fx-glass {
             position: absolute;
             left: 0;
@@ -4206,6 +4214,103 @@
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
                 }).observe(c);
             })();
+
+            // Pluie d'or sur la section Origines
+            (function goldRain(section) {
+                if (!section) return;
+                var c = document.createElement('canvas');
+                c.className = 'fx-goldrain';
+                c.setAttribute('aria-hidden', 'true');
+                section.appendChild(c);
+                var ctx = c.getContext('2d');
+                var dpr = Math.min(window.devicePixelRatio || 1, 2);
+                var W = 0, H = 0, drops = [], glints = [], running = false, raf = 0, t = 0;
+                // trait doré pré-dessiné : traîne transparente -> or -> tête lumineuse
+                var streak = document.createElement('canvas');
+                streak.width = 8; streak.height = 96;
+                var sg = streak.getContext('2d');
+                var g = sg.createLinearGradient(0, 0, 0, 96);
+                g.addColorStop(0, 'rgba(185, 135, 74, 0)');
+                g.addColorStop(.7, 'rgba(185, 135, 74, .85)');
+                g.addColorStop(.92, 'rgba(232, 196, 130, 1)');
+                g.addColorStop(1, 'rgba(255, 238, 200, 1)');
+                sg.fillStyle = g;
+                sg.beginPath();
+                sg.moveTo(4, 0); sg.lineTo(6, 86); sg.quadraticCurveTo(4, 96, 2, 86); sg.closePath();
+                sg.fill();
+                function make(anywhere) {
+                    var z = Math.random();                   // profondeur : les gouttes lointaines sont plus fines et lentes
+                    return {
+                        x: Math.random() * (W + 120) - 60,
+                        y: anywhere ? Math.random() * H : -40 - Math.random() * 200,
+                        v: 1.3 + z * 2.6,
+                        len: 18 + z * 30,
+                        w: 1.5 + z * 2.4,
+                        a: .45 + z * .5,
+                        z: z
+                    };
+                }
+                function resize() {
+                    W = section.offsetWidth; H = section.offsetHeight;
+                    c.width = W * dpr; c.height = H * dpr;
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    var n = Math.round(Math.min(260, (W * H) / 7000));
+                    drops = [];
+                    for (var i = 0; i < n; i++) drops.push(make(true));
+                }
+                function frame() {
+                    t++;
+                    var wind = .35 + .2 * Math.sin(t * .004);    // léger vent qui fait pencher la pluie
+                    ctx.clearRect(0, 0, W, H);
+                    for (var i = 0; i < drops.length; i++) {
+                        var d = drops[i];
+                        d.y += d.v;
+                        d.x += wind * d.v * .35;
+                        if (d.y - d.len > H) {
+                            // à l'arrivée, un petit éclat scintille parfois
+                            if (Math.random() < .25 && glints.length < 30) glints.push({ x: d.x, y: H * (.15 + Math.random() * .8), life: 0, max: 40 + Math.random() * 40, s: 2 + d.z * 4 });
+                            drops[i] = d = make(false);
+                        }
+                        ctx.save();
+                        ctx.globalAlpha = d.a;
+                        ctx.translate(d.x, d.y);
+                        ctx.rotate(-Math.atan2(wind * .35, 1));
+                        ctx.drawImage(streak, -d.w / 2, -d.len, d.w, d.len);
+                        ctx.restore();
+                    }
+                    // éclats dorés en forme d'étoile
+                    for (var j = glints.length - 1; j >= 0; j--) {
+                        var gl = glints[j];
+                        gl.life++;
+                        var f = gl.life / gl.max;
+                        if (f >= 1) { glints.splice(j, 1); continue; }
+                        var a = Math.sin(Math.PI * f);
+                        var s = gl.s * (.6 + .4 * a);
+                        ctx.globalAlpha = a * .85;
+                        ctx.fillStyle = 'rgba(214, 172, 104, 1)';
+                        ctx.beginPath();
+                        ctx.moveTo(gl.x, gl.y - s * 2); ctx.lineTo(gl.x + s * .35, gl.y - s * .35);
+                        ctx.lineTo(gl.x + s * 2, gl.y); ctx.lineTo(gl.x + s * .35, gl.y + s * .35);
+                        ctx.lineTo(gl.x, gl.y + s * 2); ctx.lineTo(gl.x - s * .35, gl.y + s * .35);
+                        ctx.lineTo(gl.x - s * 2, gl.y); ctx.lineTo(gl.x - s * .35, gl.y - s * .35);
+                        ctx.closePath(); ctx.fill();
+                    }
+                    ctx.globalAlpha = 1;
+                    if (running) raf = requestAnimationFrame(frame);
+                }
+                resize();
+                if ('ResizeObserver' in window) {
+                    var lw = 0, lh = 0;
+                    new ResizeObserver(function() {
+                        if (section.offsetWidth !== lw || section.offsetHeight !== lh) { lw = section.offsetWidth; lh = section.offsetHeight; resize(); }
+                    }).observe(section);
+                }
+                new IntersectionObserver(function(es) {
+                    var vis = es[0].isIntersecting;
+                    if (vis && !running) { running = true; raf = requestAnimationFrame(frame); }
+                    if (!vis && running) { running = false; cancelAnimationFrame(raf); }
+                }).observe(section);
+            })(document.getElementById('origine'));
 
             var ticking = false;
             function onScroll() {

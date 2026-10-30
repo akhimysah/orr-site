@@ -3044,7 +3044,11 @@
             .og-row > .og-img:first-child img[src*="origine-safran"],
             .og-row > .og-img:first-child:hover img[src*="origine-safran"] {
                 height: min(104%, 44vw);
-                transform: translate(-3%, -50%);
+                /* collée juste sous la frise : plus de bande crème au-dessus */
+                top: -51px;
+                transform: translate(-3%, 0);
+                -webkit-mask-image: linear-gradient(to left, transparent 0, #000 32%), linear-gradient(to bottom, #000 0, #000 84%, transparent 100%);
+                mask-image: linear-gradient(to left, transparent 0, #000 32%), linear-gradient(to bottom, #000 0, #000 84%, transparent 100%);
             }
         }
         /* --- Communauté : la photo du mur peint en fond de toute la section --- */

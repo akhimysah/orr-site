@@ -978,6 +978,11 @@
             height: auto;
         }
 
+        .orr-plante {
+            position: relative;
+            overflow: hidden;
+            background: #8a4a24;
+        }
         /* ===== ORIGINES ===== */
         #origine {
             background: var(--cream);
@@ -3340,6 +3345,16 @@
         </section>
         <div class="frise" aria-hidden="true"></div>
 
+        <!-- ===== CONNAIS-TU CETTE PLANTE (collée sous ORR) ===== -->
+        <section class="orr-plante" id="plante" aria-label="Connais-tu cette plante ?">
+            <figure class="orr-wide reveal">
+                <picture>
+                <source media="(min-width: 941px)" srcset="images/theme-plante-large.webp" width="1672" height="941" />
+                <img src="images/theme-plante.webp" width="1200" height="1501" loading="lazy" alt="ORR — Connais-tu cette plante ? Une plante, une histoire, un savoir." />
+                </picture>
+            </figure>
+        </section>
+        <div class="frise" aria-hidden="true"></div>
         <!-- ===== CRÉATIONS AVEC IMAGE DE FOND ===== -->
         <section id="creations">
             <div class="creations-bg" aria-hidden="true"></div>
@@ -3373,17 +3388,6 @@
                         <button class="lnk order-trigger" data-box="Collection Sauvage">Découvrir</button>
                     </article>
                 </div>
-                <div class="frise frise--vw frise--top" aria-hidden="true"></div>
-                <div class="theme-inline theme-inline--wide theme-inline--crea">
-                    <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-plante.webp');" aria-hidden="true"></div>
-                    <figure class="theme-card reveal">
-                        <picture>
-                        <source media="(min-width: 941px)" srcset="images/theme-plante-large.webp" width="1672" height="941" />
-                        <img src="images/theme-plante.webp" width="1200" height="1501" loading="lazy" alt="ORR — Connais-tu cette plante ? Une plante, une histoire, un savoir." />
-                        </picture>
-                    </figure>
-                </div>
-                <div class="frise frise--vw frise--bottom" aria-hidden="true"></div>
                 <p class="eyebrow reveal r1" style="text-align:center;margin:64px 0 -20px;">Les Box Rituelles</p>
                 <div class="crea-grid">
                     <article class="crea reveal r1">

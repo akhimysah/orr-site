@@ -3059,6 +3059,32 @@
             }
         }
 
+        /* --- Cartes Créations et Communauté : contenu centré --- */
+        .crea,
+        .com {
+            align-items: center;
+            text-align: center;
+        }
+        .crea p,
+        .com p {
+            width: 100%;
+        }
+        .crea .lnk,
+        .com .act {
+            text-align: center;
+        }
+        .com .act::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .com .nl {
+            width: 100%;
+            justify-content: center;
+        }
+        .com .nl input {
+            text-align: center;
+        }
+
         /* --- Fumée d'encens animée sur les photos Origines --- */
         .og-img .fx-smoke {
             position: absolute;

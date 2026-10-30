@@ -4599,29 +4599,28 @@
                 section.appendChild(c);
                 var ctx = c.getContext('2d');
                 var dpr = Math.min(window.devicePixelRatio || 1, 2);
-                var W = 0, H = 0, drops = [], glints = [], running = false, raf = 0, t = 0;
-                // trait doré pré-dessiné : traîne transparente -> or -> tête lumineuse
+                var W = 0, H = 0, drops = [], splashes = [], running = false, raf = 0, t = 0;
+                // filet de pluie pré-dessiné : fin, régulier, sans tête lumineuse (une vraie goutte en mouvement)
                 var streak = document.createElement('canvas');
-                streak.width = 8; streak.height = 96;
+                streak.width = 4; streak.height = 128;
                 var sg = streak.getContext('2d');
-                var g = sg.createLinearGradient(0, 0, 0, 96);
-                g.addColorStop(0, 'rgba(185, 135, 74, 0)');
-                g.addColorStop(.7, 'rgba(185, 135, 74, .85)');
-                g.addColorStop(.92, 'rgba(232, 196, 130, 1)');
-                g.addColorStop(1, 'rgba(255, 238, 200, 1)');
+                var g = sg.createLinearGradient(0, 0, 0, 128);
+                g.addColorStop(0, 'rgba(226, 190, 130, 0)');
+                g.addColorStop(.55, 'rgba(226, 190, 130, .55)');
+                g.addColorStop(.9, 'rgba(236, 206, 152, .9)');
+                g.addColorStop(1, 'rgba(236, 206, 152, .35)');
                 sg.fillStyle = g;
-                sg.beginPath();
-                sg.moveTo(4, 0); sg.lineTo(6, 86); sg.quadraticCurveTo(4, 96, 2, 86); sg.closePath();
-                sg.fill();
+                sg.fillRect(1, 0, 2, 128);
+                var SLANT = .14;                               // la pluie tombe légèrement en biais
                 function make(anywhere) {
-                    var z = Math.random();                   // profondeur : les gouttes lointaines sont plus fines et lentes
+                    var z = Math.random();                     // profondeur : au loin plus fine, plus lente, plus pâle
                     return {
-                        x: Math.random() * (W + 120) - 60,
-                        y: anywhere ? Math.random() * H : -40 - Math.random() * 200,
-                        v: 1.3 + z * 2.6,
-                        len: 18 + z * 30,
-                        w: 1.5 + z * 2.4,
-                        a: .45 + z * .5,
+                        x: Math.random() * (W + 160) - 80,
+                        y: anywhere ? Math.random() * (H + 200) : -120 - Math.random() * 300,
+                        v: 9 + z * 9,
+                        len: 38 + z * 70,
+                        w: 1 + z * 1.1,
+                        a: .26 + z * .42,
                         z: z
                     };
                 }
@@ -4629,46 +4628,51 @@
                     W = section.offsetWidth; H = section.offsetHeight;
                     c.width = W * dpr; c.height = H * dpr;
                     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-                    var n = Math.round(Math.min(260, (W * H) / 7000));
+                    var n = Math.round(Math.min(320, (W * H) / 4500));
                     drops = [];
                     for (var i = 0; i < n; i++) drops.push(make(true));
                 }
+                var ang = -Math.atan(SLANT);
                 function frame() {
                     t++;
-                    var wind = .35 + .2 * Math.sin(t * .004);    // léger vent qui fait pencher la pluie
+                    var gust = SLANT * (1 + .25 * Math.sin(t * .006));
                     ctx.clearRect(0, 0, W, H);
                     for (var i = 0; i < drops.length; i++) {
                         var d = drops[i];
                         d.y += d.v;
-                        d.x += wind * d.v * .35;
+                        d.x += d.v * gust;
                         if (d.y - d.len > H) {
-                            // à l'arrivée, un petit éclat scintille parfois
-                            if (Math.random() < .25 && glints.length < 30) glints.push({ x: d.x, y: H * (.15 + Math.random() * .8), life: 0, max: 40 + Math.random() * 40, s: 2 + d.z * 4 });
-                            drops[i] = d = make(false);
+                            drops[i] = make(false);
+                            continue;
                         }
+                        // de temps en temps, une goutte proche touche « le sol » de l'écran : petite éclaboussure
+                        if (d.z > .75 && !d.hit && d.y > d.target) {
+                            d.hit = true;
+                            if (splashes.length < 24) splashes.push({ x: d.x, y: d.y, life: 0 });
+                            drops[i] = make(false);
+                            continue;
+                        }
+                        if (d.target === undefined) d.target = d.z > .75 && Math.random() < .35 ? H * (.25 + Math.random() * .75) : Infinity;
                         ctx.save();
                         ctx.globalAlpha = d.a;
                         ctx.translate(d.x, d.y);
-                        ctx.rotate(-Math.atan2(wind * .35, 1));
+                        ctx.rotate(ang);
                         ctx.drawImage(streak, -d.w / 2, -d.len, d.w, d.len);
                         ctx.restore();
                     }
-                    // éclats dorés en forme d'étoile
-                    for (var j = glints.length - 1; j >= 0; j--) {
-                        var gl = glints[j];
-                        gl.life++;
-                        var f = gl.life / gl.max;
-                        if (f >= 1) { glints.splice(j, 1); continue; }
-                        var a = Math.sin(Math.PI * f);
-                        var s = gl.s * (.6 + .4 * a);
-                        ctx.globalAlpha = a * .85;
-                        ctx.fillStyle = 'rgba(214, 172, 104, 1)';
+                    // éclaboussures : un petit anneau aplati qui s'ouvre et s'efface
+                    ctx.strokeStyle = 'rgb(232, 200, 145)';
+                    for (var j = splashes.length - 1; j >= 0; j--) {
+                        var sp = splashes[j];
+                        sp.life++;
+                        var f = sp.life / 26;
+                        if (f >= 1) { splashes.splice(j, 1); continue; }
+                        var r = 2 + f * 9;
+                        ctx.globalAlpha = .45 * (1 - f);
+                        ctx.lineWidth = 1;
                         ctx.beginPath();
-                        ctx.moveTo(gl.x, gl.y - s * 2); ctx.lineTo(gl.x + s * .35, gl.y - s * .35);
-                        ctx.lineTo(gl.x + s * 2, gl.y); ctx.lineTo(gl.x + s * .35, gl.y + s * .35);
-                        ctx.lineTo(gl.x, gl.y + s * 2); ctx.lineTo(gl.x - s * .35, gl.y + s * .35);
-                        ctx.lineTo(gl.x - s * 2, gl.y); ctx.lineTo(gl.x - s * .35, gl.y - s * .35);
-                        ctx.closePath(); ctx.fill();
+                        ctx.ellipse(sp.x, sp.y, r, r * .3, 0, 0, 6.283);
+                        ctx.stroke();
                     }
                     ctx.globalAlpha = 1;
                     if (running) raf = requestAnimationFrame(frame);

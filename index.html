@@ -208,11 +208,21 @@
         .nav.scrolled .nav-links a {
             text-shadow: 0 0 10px rgba(250, 249, 246, .95), 0 0 2px rgba(250, 249, 246, .9) !important;
         }
+        .nav-burger,
         .nav.scrolled .nav-burger,
         .nav.scrolled .nav-cta {
-            background: rgba(250, 249, 246, .55) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        .nav.scrolled .nav-burger span {
+            box-shadow: 0 0 4px rgba(250, 249, 246, .95), 0 0 1px rgba(250, 249, 246, 1);
+        }
+        .nav.scrolled .nav-burger {
+            box-shadow: 0 0 6px rgba(250, 249, 246, .6), inset 0 0 6px rgba(250, 249, 246, .4);
+        }
+        .nav.scrolled .nav-cta {
+            text-shadow: 0 0 10px rgba(250, 249, 246, .95);
         }
 
         .nav-in {

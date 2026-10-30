@@ -939,6 +939,12 @@
                 margin-right: -20px;
             }
         }
+        /* dans Créations (contenu centré) : pleine largeur de l'écran */
+        .frise--vw,
+        .theme-inline.theme-inline--wide.theme-inline--crea {
+            margin-left: calc(50% - 50vw);
+            margin-right: calc(50% - 50vw);
+        }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
         .theme-inline {
             position: relative;
@@ -3367,12 +3373,17 @@
                         <button class="lnk order-trigger" data-box="Collection Sauvage">Découvrir</button>
                     </article>
                 </div>
-                <div class="theme-inline theme-inline--crea">
+                <div class="frise frise--vw frise--top" aria-hidden="true"></div>
+                <div class="theme-inline theme-inline--wide theme-inline--crea">
                     <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-plante.webp');" aria-hidden="true"></div>
                     <figure class="theme-card reveal">
+                        <picture>
+                        <source media="(min-width: 941px)" srcset="images/theme-plante-large.webp" width="1672" height="941" />
                         <img src="images/theme-plante.webp" width="1200" height="1501" loading="lazy" alt="ORR — Connais-tu cette plante ? Une plante, une histoire, un savoir." />
+                        </picture>
                     </figure>
                 </div>
+                <div class="frise frise--vw frise--bottom" aria-hidden="true"></div>
                 <p class="eyebrow reveal r1" style="text-align:center;margin:64px 0 -20px;">Les Box Rituelles</p>
                 <div class="crea-grid">
                     <article class="crea reveal r1">

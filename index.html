@@ -890,17 +890,17 @@
                 mask-composite: add;
             }
         }
-        /* Mémoire sur ordinateur : version large, sur toute la largeur de l'écran */
+        /* Mémoire et Notre histoire sur ordinateur : version large, sur toute la largeur de l'écran */
         @media (min-width: 941px) {
-            #memoire {
+            .theme-sec--wide {
                 min-height: 0;
             }
-            #memoire .theme-card--wide {
+            .theme-sec--wide .theme-card--wide {
                 width: 100%;
                 height: auto;
                 aspect-ratio: auto;
             }
-            #memoire .theme-card--wide img {
+            .theme-sec--wide .theme-card--wide img {
                 height: auto;
                 object-fit: fill;
                 -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
@@ -3163,7 +3163,7 @@
 
         <!-- ===== MÉMOIRE · CORPS · ÉNERGIE ===== -->
         <div class="frise" aria-hidden="true"></div>
-        <section class="theme-sec" id="memoire" aria-label="Mémoire, corps, énergie">
+        <section class="theme-sec theme-sec--wide" id="memoire" aria-label="Mémoire, corps, énergie">
             <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-memoire.webp');" aria-hidden="true"></div>
             <figure class="theme-card theme-card--wide reveal">
                 <picture>
@@ -3358,10 +3358,13 @@
 
         <!-- ===== NOTRE HISTOIRE ===== -->
         <div class="frise" aria-hidden="true"></div>
-        <section class="theme-sec" id="histoire" aria-label="Notre histoire">
+        <section class="theme-sec theme-sec--wide" id="histoire" aria-label="Notre histoire">
             <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-histoire.webp');" aria-hidden="true"></div>
-            <figure class="theme-card theme-card--tall reveal">
+            <figure class="theme-card theme-card--wide reveal">
+                <picture>
+                <source media="(min-width: 941px)" srcset="images/theme-histoire-large.webp" width="1672" height="941" />
                 <img src="images/theme-histoire.webp" width="1003" height="1568" loading="lazy" alt="Notre histoire — ORR est né d'une conviction simple : le corps féminin porte une mémoire. Chaque femme mérite un espace où ralentir, respirer et renouer avec sa nature profonde. Nous créons des rituels inspirés des savoirs ancestraux pour accompagner cette reconnexion. Là où mémoire, corps et énergie se rencontrent." />
+                </picture>
             </figure>
         </section>
         <div class="frise" aria-hidden="true"></div>

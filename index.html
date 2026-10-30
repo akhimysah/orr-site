@@ -855,6 +855,41 @@
             mask-image: linear-gradient(to right, transparent 0, #000 11%, #000 89%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 11%, #000 89%, transparent 100%);
             mask-composite: intersect;
         }
+        /* Mémoire et Notre histoire : le visuel prend toute la page */
+        .theme-sec {
+            padding: 0;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .theme-sec .theme-card {
+            width: auto;
+            height: 100vh;
+            max-width: 100%;
+            aspect-ratio: 1024 / 1536;
+        }
+        .theme-sec .theme-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @media (max-width: 940px) {
+            /* mobile : d'un bord à l'autre de l'écran, fondu seulement en haut et en bas */
+            .theme-sec {
+                min-height: 0;
+            }
+            .theme-sec .theme-card {
+                width: 100%;
+                height: auto;
+                aspect-ratio: auto;
+            }
+            .theme-sec .theme-card img {
+                height: auto;
+                -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+                -webkit-mask-composite: source-over;
+                mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+                mask-composite: add;
+            }
+        }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
         .theme-inline {
             position: relative;
@@ -3115,6 +3150,7 @@
                 <img src="images/theme-memoire.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mémoire · Corps · Énergie. Rituels et savoirs ancestraux pour femmes d'aujourd'hui." />
             </figure>
         </section>
+        <div class="frise" aria-hidden="true"></div>
 
         <!-- ===== MANIFESTE ===== -->
         <section class="hero-manifeste" id="manifeste">

@@ -890,6 +890,25 @@
                 mask-composite: add;
             }
         }
+        /* Mémoire sur ordinateur : version large, sur toute la largeur de l'écran */
+        @media (min-width: 941px) {
+            #memoire {
+                min-height: 0;
+            }
+            #memoire .theme-card--wide {
+                width: 100%;
+                height: auto;
+                aspect-ratio: auto;
+            }
+            #memoire .theme-card--wide img {
+                height: auto;
+                object-fit: fill;
+                -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
+                -webkit-mask-composite: source-over;
+                mask-image: linear-gradient(to bottom, transparent 0, #000 7%, #000 93%, transparent 100%);
+                mask-composite: add;
+            }
+        }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
         .theme-inline {
             position: relative;
@@ -3146,8 +3165,11 @@
         <div class="frise" aria-hidden="true"></div>
         <section class="theme-sec" id="memoire" aria-label="Mémoire, corps, énergie">
             <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-memoire.webp');" aria-hidden="true"></div>
-            <figure class="theme-card reveal">
+            <figure class="theme-card theme-card--wide reveal">
+                <picture>
+                <source media="(min-width: 941px)" srcset="images/theme-memoire-large.webp" width="1672" height="941" />
                 <img src="images/theme-memoire.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mémoire · Corps · Énergie. Rituels et savoirs ancestraux pour femmes d'aujourd'hui." />
+                </picture>
             </figure>
         </section>
         <div class="frise" aria-hidden="true"></div>

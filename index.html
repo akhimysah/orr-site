@@ -3029,6 +3029,16 @@
                 mask-composite: intersect;
             }
         }
+        @media (min-width: 941px) {
+            /* collée au bord gauche de l'écran, fondu côté texte (à droite), en haut et en bas */
+            .og-row > .og-img:first-child img.og-photo,
+            .og-row > .og-img:first-child:hover img.og-photo {
+                -webkit-mask-image: linear-gradient(to left, transparent 0, #000 32%), linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%);
+                -webkit-mask-composite: source-in;
+                mask-image: linear-gradient(to left, transparent 0, #000 32%), linear-gradient(to bottom, transparent 0, #000 16%, #000 84%, transparent 100%);
+                mask-composite: intersect;
+            }
+        }
         /* --- Communauté : la photo du mur peint en fond de toute la section --- */
         #communaute {
             background-image:
@@ -3426,26 +3436,26 @@
             
             <div style="position: relative; z-index: 2;">
                 <div class="og-row">
-                    <div class="og-txt reveal">
+                    <div class="og-img reveal r2" aria-hidden="true">
+                        <img class="og-photo" src="images/origine-pieds.webp" alt="Pieds tatoués d'une femme amazighe sur la terre, devant une kasbah" loading="lazy" />
+                    </div>
+                    <div class="og-txt r reveal">
                         <h3>Nos racines</h3>
                         <div class="rule"></div>
                         <p>Avant les tendances, avant les formulations modernes, il y avait les gestes. Simples, liés à la terre, aux saisons, à la vie quotidienne. Transmis naturellement, de mère en fille, de génération en génération.</p>
                         <p class="og-ital">ORR s'inscrit dans cette continuité.</p>
                     </div>
-                    <div class="og-img reveal r2" aria-hidden="true">
-                        <img class="og-photo" src="images/origine-pieds.webp" alt="Pieds tatoués d'une femme amazighe sur la terre, devant une kasbah" loading="lazy" />
-                    </div>
                 </div>
                 <div class="og-row">
-                    <div class="og-img reveal" aria-hidden="true" id="pictue2">
-                        <img src="images/origine-2.webp" alt="Transmission" loading="lazy" />
-                    </div>
-                    <div class="og-txt r reveal r2">
+                    <div class="og-txt reveal r2">
                         <h3>Ce qui se transmet ne disparaît jamais</h3>
                         <div class="rule"></div>
                         <p>Les savoirs ancestraux vivent dans les gestes que l'on répète, dans les matières que l'on reconnaît, dans les histoires que l'on raconte.</p>
                         <p>Retrouver ce qui a été oublié, comprendre ce qui nous a précédés, redonner du sens à des pratiques simples.</p>
                         <p class="og-ital">La transmission devient un lien entre hier et aujourd'hui.</p>
+                    </div>
+                    <div class="og-img reveal" aria-hidden="true" id="pictue2">
+                        <img src="images/origine-2.webp" alt="Transmission" loading="lazy" />
                     </div>
                 </div>
                 <div class="frise frise--bleed frise--top" aria-hidden="true"></div>
@@ -3460,26 +3470,26 @@
                 </div>
                 <div class="frise frise--bleed frise--bottom" aria-hidden="true"></div>
                 <div class="og-row">
-                    <div class="og-txt reveal">
+                    <div class="og-img reveal r2" aria-hidden="true">
+                        <img class="og-photo" src="images/origine-safran.webp" alt="Main tatouée qui cueille des fleurs de safran" loading="lazy" />
+                    </div>
+                    <div class="og-txt r reveal">
                         <h3>Des savoirs nés de l'observation</h3>
                         <div class="rule"></div>
                         <p>Pendant des générations, les femmes ont appris à observer leur environnement, à connaître les propriétés des matières qui les entouraient et à les intégrer naturellement dans leur quotidien.</p>
                         <p>ORR les explore avec respect, sans les figer, pour comprendre ce qu'elles peuvent encore nous apprendre aujourd'hui.</p>
                     </div>
-                    <div class="og-img reveal r2" aria-hidden="true">
-                        <img class="og-photo" src="images/origine-safran.webp" alt="Main tatouée qui cueille des fleurs de safran" loading="lazy" />
-                    </div>
                 </div>
                 <div class="og-row">
-                    <div class="og-img reveal" aria-hidden="true" id="pictue2">
-                        <img src="images/origine-4.webp" alt="Matière" loading="lazy" />
-                    </div>
-                    <div class="og-txt r reveal r2">
+                    <div class="og-txt reveal r2">
                         <h3>Revenir à la matière</h3>
                         <div class="rule"></div>
                         <p><span class="serif og-ital">La terre. Le végétal. Le minéral. L'eau. Le feu.</span></p>
                         <p>Des matières simples, brutes, imparfaites. ORR considère la matière comme une expérience : sa texture, son parfum, son origine, son poids, son histoire.</p>
                         <p class="og-ital">Cette relation sensible est au cœur de l'univers ORR.</p>
+                    </div>
+                    <div class="og-img reveal" aria-hidden="true" id="pictue2">
+                        <img src="images/origine-4.webp" alt="Matière" loading="lazy" />
                     </div>
                 </div>
             </div>

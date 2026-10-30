@@ -909,23 +909,34 @@
                 mask-composite: add;
             }
         }
-        /* La transmission sur ordinateur : version large d'un bord à l'autre, fondue en haut et en bas */
-        @media (min-width: 941px) {
+        /* La transmission : d'un bord à l'autre, encadrée par la frise berbère (sans fondu) */
+        .frise--bleed {
+            margin-left: -28px;
+            margin-right: -28px;
+        }
+        .frise--top { margin-top: 40px; }
+        .frise--bottom { margin-bottom: 60px; }
+        .theme-inline.theme-inline--wide {
+            padding: 0;
+            margin: 0 -28px;
+            -webkit-mask-image: none !important;
+            mask-image: none !important;
+        }
+        .theme-inline--wide .theme-sec-bg {
+            display: none;
+        }
+        .theme-inline--wide .theme-card {
+            width: 100%;
+        }
+        .theme-inline--wide .theme-card img {
+            -webkit-mask-image: none;
+            mask-image: none;
+        }
+        @media (max-width: 768px) {
+            .frise--bleed,
             .theme-inline.theme-inline--wide {
-                padding: 0;
-                margin: 30px -28px 50px;
-                -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%) !important;
-                mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%) !important;
-            }
-            .theme-inline--wide .theme-sec-bg {
-                display: none;
-            }
-            .theme-inline--wide .theme-card {
-                width: 100%;
-            }
-            .theme-inline--wide .theme-card img {
-                -webkit-mask-image: none;
-                mask-image: none;
+                margin-left: -20px;
+                margin-right: -20px;
             }
         }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
@@ -3272,6 +3283,7 @@
                         <p class="og-ital">La transmission devient un lien entre hier et aujourd'hui.</p>
                     </div>
                 </div>
+                <div class="frise frise--bleed frise--top" aria-hidden="true"></div>
                 <div class="theme-inline theme-inline--wide">
                     <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-transmission.webp');" aria-hidden="true"></div>
                     <figure class="theme-card reveal">
@@ -3281,6 +3293,7 @@
                         </picture>
                     </figure>
                 </div>
+                <div class="frise frise--bleed frise--bottom" aria-hidden="true"></div>
                 <div class="og-row">
                     <div class="og-txt reveal">
                         <h3>Des savoirs nés de l'observation</h3>

@@ -3029,23 +3029,32 @@
                 mask-composite: intersect;
             }
         }
-        /* --- Communauté : grand portrait fondu dans le fond --- */
-        .com-visual {
-            width: min(540px, 100%);
-            margin: 36px auto 0;
+        /* --- Communauté : la photo du mur peint en fond de toute la section --- */
+        #communaute {
+            background-image:
+                linear-gradient(to bottom, rgba(42, 14, 8, .62) 0%, rgba(42, 14, 8, .28) 34%, rgba(42, 14, 8, .18) 60%, rgba(42, 14, 8, .5) 100%),
+                url('images/communaute-mur.webp');
+            background-size: cover;
+            background-position: right 30%;
         }
-        .com-visual img {
-            display: block;
-            width: 100%;
-            height: auto;
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 82%, transparent 100%), linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%);
-            -webkit-mask-composite: source-in;
-            mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 82%, transparent 100%), linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%);
-            mask-composite: intersect;
-        }
+        #communaute .eyebrow { color: var(--gold); }
+        #communaute .hd { color: var(--nude); text-shadow: 0 2px 18px rgba(30, 8, 4, .55); }
+        #communaute .section-sub { color: var(--nude); opacity: .92; text-shadow: 0 1px 10px rgba(30, 8, 4, .6); }
+        #communaute .rule { background: var(--gold); opacity: .7; }
         @media (max-width: 768px) {
-            .com-visual { width: auto; margin: 28px -20px 0; }
+            /* téléphone : le portrait en entier en haut, puis il se fond dans un fond sombre derrière les cartes */
+            #communaute {
+                padding-top: 118vw;
+                background-color: #2e0f09;
+                background-image:
+                    linear-gradient(to bottom, rgba(46, 15, 9, .35) 0%, rgba(46, 15, 9, 0) 14%, rgba(46, 15, 9, 0) 52%, rgba(46, 15, 9, .85) 82%, #2e0f09 100%),
+                    url('images/communaute-femme.webp');
+                background-size: 100% 177.7vw, 100% auto;
+                background-position: center top, center top;
+                background-repeat: no-repeat;
+            }
         }
+
         /* --- Fumée d'encens animée sur les photos Origines --- */
         .og-img .fx-smoke {
             position: absolute;
@@ -3681,9 +3690,6 @@
                     <div class="rule reveal r2"></div>
                 </div>
 
-                <figure class="com-visual reveal">
-                    <img src="images/communaute-femme.webp" width="941" height="1672" loading="lazy" alt="Portrait d'une femme peint sur un mur de terre, voile au vent" />
-                </figure>
                 <div class="com-grid">
                     <!-- Card 1: Le Cercle ORR -->
                     <article class="com reveal r1">

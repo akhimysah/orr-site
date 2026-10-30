@@ -839,10 +839,6 @@
             filter: blur(30px) brightness(.9);
             transform: scale(1.1);
         }
-        /* le mur au logo, légèrement assombri pour prendre la couleur des bords du visuel */
-        .theme-sec-bg--mur {
-            filter: brightness(.85);
-        }
         /* visuels intégrés : pas de cadre, bords qui se fondent dans le décor */
         .theme-card {
             position: relative;
@@ -854,12 +850,10 @@
             display: block;
             width: 100%;
             height: auto;
-            -webkit-mask-image: radial-gradient(ellipse 62% 66% at 50% 50%, #000 64%, transparent 100%);
-            mask-image: radial-gradient(ellipse 62% 66% at 50% 50%, #000 64%, transparent 100%);
-        }
-        .theme-card--tall img {
-            -webkit-mask-image: radial-gradient(ellipse 62% 74% at 50% 50%, #000 66%, transparent 100%);
-            mask-image: radial-gradient(ellipse 62% 74% at 50% 50%, #000 66%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0, #000 11%, #000 89%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 11%, #000 89%, transparent 100%);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent 0, #000 11%, #000 89%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 11%, #000 89%, transparent 100%);
+            mask-composite: intersect;
         }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
         .theme-inline {
@@ -870,9 +864,9 @@
             justify-content: center;
             padding: 110px 20px;
             margin: 20px 0 40px;
-            /* la bande se dissout en ovale dans le crème, sans aucun bord net */
-            -webkit-mask-image: radial-gradient(ellipse 60% 56% at 50% 50%, #000 52%, transparent 100%);
-            mask-image: radial-gradient(ellipse 60% 56% at 50% 50%, #000 52%, transparent 100%);
+            /* la bande se dissout dans le crème : transparente sur tout son pourtour */
+            -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 45%, transparent 100%);
+            mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 45%, transparent 100%);
         }
         .theme-inline--crea {
             /* pleine largeur, même à l'intérieur du conteneur centré */
@@ -3116,7 +3110,7 @@
         <!-- ===== MÉMOIRE · CORPS · ÉNERGIE ===== -->
         <div class="frise" aria-hidden="true"></div>
         <section class="theme-sec" id="memoire" aria-label="Mémoire, corps, énergie">
-            <div class="theme-sec-bg theme-sec-bg--mur" style="background-image: url('images/theme-mur.webp');" aria-hidden="true"></div>
+            <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-memoire.webp');" aria-hidden="true"></div>
             <figure class="theme-card reveal">
                 <img src="images/theme-memoire.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mémoire · Corps · Énergie. Rituels et savoirs ancestraux pour femmes d'aujourd'hui." />
             </figure>

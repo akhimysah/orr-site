@@ -909,6 +909,25 @@
                 mask-composite: add;
             }
         }
+        /* La transmission sur ordinateur : version large d'un bord à l'autre, fondue en haut et en bas */
+        @media (min-width: 941px) {
+            .theme-inline.theme-inline--wide {
+                padding: 0;
+                margin: 30px -28px 50px;
+                -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%) !important;
+                mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%) !important;
+            }
+            .theme-inline--wide .theme-sec-bg {
+                display: none;
+            }
+            .theme-inline--wide .theme-card {
+                width: 100%;
+            }
+            .theme-inline--wide .theme-card img {
+                -webkit-mask-image: none;
+                mask-image: none;
+            }
+        }
         /* bandes dans Origines et Créations : le fond flou se fond lui-même dans la section */
         .theme-inline {
             position: relative;
@@ -3239,10 +3258,13 @@
                         <p class="og-ital">La transmission devient un lien entre hier et aujourd'hui.</p>
                     </div>
                 </div>
-                <div class="theme-inline">
+                <div class="theme-inline theme-inline--wide">
                     <div class="theme-sec-bg theme-sec-bg--blur" style="background-image: url('images/theme-transmission.webp');" aria-hidden="true"></div>
                     <figure class="theme-card reveal">
+                        <picture>
+                        <source media="(min-width: 941px)" srcset="images/theme-transmission-large.webp" width="1672" height="941" />
                         <img src="images/theme-transmission.webp" width="1024" height="1280" loading="lazy" alt="La transmission — On nous a appris à faire les choses plus vite. Nos ancêtres savaient que certains gestes méritaient qu'on leur donne du temps." />
+                        </picture>
                     </figure>
                 </div>
                 <div class="og-row">

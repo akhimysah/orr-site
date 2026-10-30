@@ -950,68 +950,10 @@
         .orr-tri {
             position: relative;
             overflow: hidden;
-            /* fond crème + chevauchement d'1 px : aucune ligne visible aux jonctions */
-            background: rgb(226, 206, 184);
-            margin: -1px 0;
+            background: #4A0810;
         }
         .orr-wide {
             margin: 0;
-        }
-        /* transitions douces : l'image se fond dans le crème au-dessus et en dessous */
-        .orr-tri::before,
-        .orr-tri::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: clamp(60px, 7.5vw, 120px);
-            z-index: 2;
-            pointer-events: none;
-        }
-        .orr-tri::before {
-            top: -1px;
-            background: linear-gradient(to bottom, rgb(226, 206, 184) 0%, rgba(226, 206, 184, .72) 35%, rgba(226, 206, 184, 0) 100%);
-        }
-        .orr-tri::after {
-            bottom: -1px;
-            background: linear-gradient(to top, rgb(226, 207, 185) 0%, rgba(226, 207, 185, .72) 35%, rgba(226, 207, 185, 0) 100%);
-        }
-        /* ornement doré sur la jonction : le logo entre deux fils d'or qui se déploient */
-        .orr-seam {
-            position: absolute;
-            top: clamp(14px, 1.8vw, 26px);
-            left: 0;
-            right: 0;
-            z-index: 3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            pointer-events: none;
-        }
-        .orr-seam img {
-            width: clamp(22px, 2.2vw, 30px);
-            height: auto;
-            filter: drop-shadow(0 1px 3px rgba(74, 8, 16, .25));
-        }
-        .orr-seam-line {
-            display: block;
-            width: clamp(60px, 14vw, 220px);
-            height: 1px;
-            background: linear-gradient(90deg, rgba(184, 140, 90, 0), rgba(184, 140, 90, .9));
-            transform: scaleX(0);
-            transform-origin: right center;
-            transition: transform 1.6s cubic-bezier(.16, 1, .3, 1) .2s;
-        }
-        .orr-seam-line.r {
-            background: linear-gradient(90deg, rgba(184, 140, 90, .9), rgba(184, 140, 90, 0));
-            transform-origin: left center;
-        }
-        .orr-seam.in .orr-seam-line {
-            transform: scaleX(1);
-        }
-        .orr-seam.reveal {
-            transform: none;
         }
         .orr-wide img {
             display: block;
@@ -3294,12 +3236,8 @@
         </section>
 
         <!-- ===== ORR EN UNE IMAGE ===== -->
+        <div class="frise" aria-hidden="true"></div>
         <section class="orr-tri" id="orr" aria-label="Ce qu'est ORR">
-            <div class="orr-seam reveal" aria-hidden="true">
-                <span class="orr-seam-line l"></span>
-                <img src="images/orr-logo.webp" alt="" width="528" height="600" />
-                <span class="orr-seam-line r"></span>
-            </div>
             <div class="orr-tri-scroll">
                 <figure class="orr-wide reveal">
                     <picture>
@@ -3309,6 +3247,7 @@
                 </figure>
             </div>
         </section>
+        <div class="frise" aria-hidden="true"></div>
 
         <!-- ===== CRÉATIONS AVEC IMAGE DE FOND ===== -->
         <section id="creations">

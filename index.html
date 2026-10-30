@@ -4959,7 +4959,7 @@
             });
         })();
     </script>
-    <!-- ===== FOND SONORE PAR SECTION (ambiances créées dans le navigateur, coupé par défaut) ===== -->
+    <!-- ===== FOND SONORE NATURE PAR SECTION (sons créés dans le navigateur, coupé par défaut) ===== -->
     <script>
         (function() {
             'use strict';
@@ -4975,23 +4975,23 @@
             btn.innerHTML = '<span class="snd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="snd-label">Son</span>';
             document.body.appendChild(btn);
 
-            // ---------- ambiance de chaque section (0 = absent, 1 = plein) ----------
-            // nappes continues : wind, sand, rain, fire, water, leaves, drone
-            // sons ponctuels   : heart, bowl, chimes, drips, birds, crickets
+            // ---------- paysage sonore de chaque section (0 = absent, 1 = plein) ----------
+            // nappes continues : river, rain, wind, sand, leaves, waves, fire
+            // sons ponctuels   : birds, crickets, owl, drips, thunder
             var SCENES = {
-                essence:    { wind: .35, drone: .3, bowl: .8, chimes: .35 },              // souffle et bol chantant
-                memoire:    { drone: .8, heart: 1, wind: .12 },                           // battement du cœur, le corps
-                manifeste:  { fire: .55, wind: .18, bowl: .45 },                          // braises et encens
-                origine:    { rain: .9, drips: 1, wind: .12 },                            // pluie fine
-                orr:        { drone: .45, bowl: 1, fire: .25 },                           // bols et résonance
-                plante:     { birds: 1, leaves: .75, wind: .18 },                         // jardin, oiseaux, feuillage
-                creations:  { wind: 1, sand: .85 },                                       // vent du désert sur les dunes
-                histoire:   { fire: 1, crickets: .8, drone: .18 },                        // feu de veillée la nuit
-                fondatrice: { water: 1, birds: .5, leaves: .3 },                          // fontaine du riad
-                communaute: { crickets: .6, chimes: .8, water: .3, wind: .15 }            // nuit douce et carillons
+                essence:    { river: .5,  birds: .55, leaves: .3, wind: .12 },     // matin au bord de l'eau
+                memoire:    { river: .9,  leaves: .25 },                           // la rivière qui coule
+                manifeste:  { rain: .6,   drips: .6, thunder: .7, wind: .2 },      // pluie et orage lointain
+                origine:    { river: .6,  birds: .7, leaves: .4 },                 // la source, l'oasis
+                plante:     { birds: 1,   leaves: .8, river: .3, wind: .12 },      // le jardin
+                orr:        { wind: .35,  leaves: .55, birds: .4, river: .3 },     // la brise dans les arbres
+                creations:  { wind: 1,    sand: .85 },                             // vent du désert sur les dunes
+                histoire:   { fire: .55,  crickets: .8, owl: .7, wind: .1 },       // nuit au coin du feu
+                fondatrice: { river: 1,   birds: .5 },                             // la rivière, pleine
+                communaute: { waves: 1,   wind: .25 }                              // les vagues
             };
-            var BEDS = ['wind', 'sand', 'rain', 'fire', 'water', 'leaves', 'drone'];
-            var EVENTS = ['heart', 'bowl', 'chimes', 'drips', 'birds', 'crickets'];
+            var BEDS = ['river', 'rain', 'wind', 'sand', 'leaves', 'waves', 'fire'];
+            var EVENTS = ['birds', 'crickets', 'owl', 'drips', 'thunder'];
 
             var ctx, master, verbSend, bus = {}, lvl = {}, on = false, built = false, current = '', timers = [];
             var white, brown;
@@ -5031,7 +5031,7 @@
                 for (var i = 0; i < arguments.length - 1; i++) arguments[i].connect(arguments[i + 1]);
                 return arguments[arguments.length - 1];
             }
-            function pan(p, dest) {           // place un son à gauche / à droite
+            function pan(p, dest) {
                 if (!ctx.createStereoPanner) return dest;
                 var s = ctx.createStereoPanner();
                 s.pan.value = p; s.connect(dest);
@@ -5045,81 +5045,6 @@
                 }
                 return b;
             }
-
-            // ---------- construction ----------
-            function build() {
-                ctx = new AC();
-                master = ctx.createGain(); master.gain.value = 0;
-                var comp = ctx.createDynamicsCompressor();
-                comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = .01; comp.release.value = .3;
-                var verb = ctx.createConvolver(); verb.buffer = impulse(3.2, 2.4);
-                verbSend = ctx.createGain(); verbSend.gain.value = .5;
-                master.connect(comp); comp.connect(ctx.destination);
-                verbSend.connect(verb); verb.connect(comp);
-                white = makeNoise(4, 'white'); brown = makeNoise(4, 'brown');
-
-                BEDS.concat(EVENTS).forEach(function(k) {
-                    var g = ctx.createGain(); g.gain.value = 0;
-                    g.connect(master);
-                    bus[k] = g; lvl[k] = 0;
-                });
-                EVENTS.forEach(function(k) { bus[k].gain.value = 1; });   // les sons ponctuels gèrent leur propre volume
-
-                // vent : souffle grave qui monte et retombe par rafales
-                var wf = filt('bandpass', 420, .7), wg = ctx.createGain(); wg.gain.value = .9;
-                chain(src(brown), wf, wg, bus.wind);
-                lfo(.07, 240, wf.frequency); lfo(.05, .45, wg.gain);
-                // sable : sifflement aigu porté par le vent
-                var sh = filt('highpass', 2600), sb = filt('bandpass', 5200, .5), sg = ctx.createGain(); sg.gain.value = .12;
-                chain(src(white), sh, sb, sg, bus.sand);
-                lfo(.11, 1800, sb.frequency); lfo(.06, .09, sg.gain);
-                // pluie : rideau fin
-                var rh = filt('highpass', 1400), rl = filt('lowpass', 9000), rg = ctx.createGain(); rg.gain.value = .14;
-                chain(src(white), rh, rl, rg, bus.rain);
-                var rl2 = filt('lowpass', 500), rg2 = ctx.createGain(); rg2.gain.value = .35;   // grondement de la pluie au sol
-                chain(src(brown), rl2, rg2, bus.rain);
-                // feu : souffle des braises (les crépitements sont ponctuels)
-                var ff = filt('lowpass', 260), fg = ctx.createGain(); fg.gain.value = .9;
-                chain(src(brown), ff, fg, bus.fire);
-                lfo(.3, .25, fg.gain);
-                // eau : fontaine qui gargouille (filtres résonants qui bougent sans cesse)
-                var wl = filt('lowpass', 3000);
-                chain(src(white), wl);
-                var waterBands = [];
-                for (var i = 0; i < 4; i++) {
-                    var bp = filt('bandpass', 800, 9), bg = ctx.createGain(); bg.gain.value = .55;
-                    wl.connect(bp); chain(bp, bg, pan(i % 2 ? .35 : -.35, bus.water));
-                    waterBands.push(bp);
-                }
-                var wb = filt('lowpass', 700), wbg = ctx.createGain(); wbg.gain.value = .25;
-                chain(src(brown), wb, wbg, bus.water);
-                timers.push(setInterval(function() {
-                    if (!on || lvl.water < .02) return;
-                    var t = ctx.currentTime;
-                    waterBands.forEach(function(b) { b.frequency.setTargetAtTime(rnd(350, 2600), t, .03); });
-                }, 70));
-                // feuillage : bruissement léger poussé par la brise
-                var lf = filt('bandpass', 4200, .6), lg = ctx.createGain(); lg.gain.value = .05;
-                chain(src(white), lf, lg, bus.leaves);
-                timers.push(setInterval(function() {
-                    if (!on || lvl.leaves < .02) return;
-                    lg.gain.setTargetAtTime(rnd(.03, .18), ctx.currentTime, .35);
-                }, 600));
-                // bourdon : note grave qui respire
-                var df = filt('lowpass', 520), dg = ctx.createGain(); dg.gain.value = .5;
-                chain(df, dg, bus.drone); dg.connect(verbSend);
-                [[73.42, .3], [73.9, .26], [110, .12], [146.8, .05]].forEach(function(n) {
-                    var o = ctx.createOscillator(), g = ctx.createGain();
-                    o.frequency.value = n[0]; g.gain.value = n[1];
-                    o.connect(g); g.connect(df); o.start();
-                });
-                lfo(.09, 180, df.frequency); lfo(.07, .18, dg.gain);
-
-                startEvents();
-                built = true;
-            }
-
-            // ---------- sons ponctuels ----------
             function env(g, t, peak, a, d) {
                 g.gain.setValueAtTime(0, t);
                 g.gain.linearRampToValueAtTime(peak, t + a);
@@ -5133,47 +5058,125 @@
                 o.start(t); o.stop(t + a + d + .05);
                 return o;
             }
-            function heartbeat() {          // « poum-poum » sourd
-                var t = ctx.currentTime + .02, L = lvl.heart;
-                [[0, .6], [.27, .4]].forEach(function(b) {
-                    var o = tone(58, t + b[0], b[1] * L, .012, .32, bus.heart);
-                    o.frequency.exponentialRampToValueAtTime(34, t + b[0] + .3);
+            function every(minMs, maxMs, key, fn) {
+                (function loop() {
+                    timers.push(setTimeout(function() {
+                        if (on && lvl[key] > .03 && !document.hidden) fn();
+                        loop();
+                    }, rnd(minMs, maxMs)));
+                })();
+            }
+
+            // ---------- construction ----------
+            function build() {
+                ctx = new AC();
+                master = ctx.createGain(); master.gain.value = 0;
+                var comp = ctx.createDynamicsCompressor();
+                comp.threshold.value = -16; comp.ratio.value = 3; comp.attack.value = .01; comp.release.value = .3;
+                var verb = ctx.createConvolver(); verb.buffer = impulse(2.8, 2.6);
+                verbSend = ctx.createGain(); verbSend.gain.value = .4;
+                master.connect(comp); comp.connect(ctx.destination);
+                verbSend.connect(verb); verb.connect(comp);
+                white = makeNoise(4, 'white'); brown = makeNoise(4, 'brown');
+
+                BEDS.concat(EVENTS).forEach(function(k) {
+                    var g = ctx.createGain(); g.gain.value = 0;
+                    g.connect(master);
+                    bus[k] = g; lvl[k] = 0;
                 });
+                EVENTS.forEach(function(k) { bus[k].gain.value = 1; });   // les sons ponctuels gèrent leur volume
+
+                // RIVIÈRE : grondement de l'eau + courant + bulles qui éclatent (le « glouglou »)
+                var rl = filt('lowpass', 520), rg = ctx.createGain(); rg.gain.value = .55;
+                chain(src(brown), rl, rg, bus.river);
+                var rb = filt('bandpass', 1300, .6), rbg = ctx.createGain(); rbg.gain.value = .11;
+                chain(src(white), rb, rbg, bus.river);
+                lfo(.05, 450, rb.frequency); lfo(.08, .04, rbg.gain);
+                var bub = filt('lowpass', 3200); bub.connect(bus.river);
+                timers.push(setInterval(function() {
+                    if (!on || lvl.river < .03 || document.hidden) return;
+                    var t = ctx.currentTime, n = Math.random() < .55 ? 1 : (Math.random() < .5 ? 2 : 0);
+                    for (var i = 0; i < n; i++) {
+                        var st = t + Math.random() * .03, f = rnd(380, 1400), d = rnd(.02, .07);
+                        var o = ctx.createOscillator(), g = ctx.createGain();
+                        o.frequency.setValueAtTime(f, st);
+                        o.frequency.exponentialRampToValueAtTime(f * rnd(1.5, 2.6), st + d);
+                        env(g, st, rnd(.012, .05), .003, d);
+                        o.connect(g); g.connect(pan(rnd(-.8, .8), bub));
+                        o.start(st); o.stop(st + d + .05);
+                    }
+                }, 28));
+
+                // PLUIE : rideau fin + rumeur au sol
+                var ph = filt('highpass', 1400), pl = filt('lowpass', 9000), pg = ctx.createGain(); pg.gain.value = .14;
+                chain(src(white), ph, pl, pg, bus.rain);
+                var pl2 = filt('lowpass', 500), pg2 = ctx.createGain(); pg2.gain.value = .35;
+                chain(src(brown), pl2, pg2, bus.rain);
+
+                // VENT : souffle qui monte et retombe par rafales
+                var wf = filt('bandpass', 420, .7), wg = ctx.createGain(); wg.gain.value = .9;
+                chain(src(brown), wf, wg, bus.wind);
+                lfo(.07, 240, wf.frequency); lfo(.05, .45, wg.gain);
+
+                // SABLE : sifflement aigu porté par le vent
+                var sh = filt('highpass', 2600), sb = filt('bandpass', 5200, .5), sg = ctx.createGain(); sg.gain.value = .12;
+                chain(src(white), sh, sb, sg, bus.sand);
+                lfo(.11, 1800, sb.frequency); lfo(.06, .09, sg.gain);
+
+                // FEUILLAGE : bruissement poussé par la brise
+                var lf = filt('bandpass', 4200, .6), lg = ctx.createGain(); lg.gain.value = .05;
+                chain(src(white), lf, lg, bus.leaves);
+                timers.push(setInterval(function() {
+                    if (!on || lvl.leaves < .02) return;
+                    lg.gain.setTargetAtTime(rnd(.03, .18), ctx.currentTime, .35);
+                }, 600));
+
+                // VAGUES : la mer monte, se brise en écume, puis se retire
+                var vl = filt('lowpass', 800), vg = ctx.createGain(); vg.gain.value = .25;
+                chain(src(brown), vl, vg, bus.waves);
+                var vh = filt('highpass', 2500), vhg = ctx.createGain(); vhg.gain.value = 0;
+                chain(src(white), vh, vhg, bus.waves);
+                (function wave() {
+                    timers.push(setTimeout(function() {
+                        if (on && lvl.waves > .03) {
+                            var t = ctx.currentTime, up = rnd(2.2, 3.4), down = rnd(3.5, 5);
+                            vg.gain.cancelScheduledValues(t);
+                            vg.gain.setTargetAtTime(rnd(1.3, 1.7), t, up / 3);
+                            vg.gain.setTargetAtTime(.25, t + up, down / 3);
+                            vl.frequency.setTargetAtTime(1500, t, up / 3);
+                            vl.frequency.setTargetAtTime(700, t + up, down / 3);
+                            vhg.gain.cancelScheduledValues(t);
+                            vhg.gain.setTargetAtTime(.14, t + up * .8, .4);
+                            vhg.gain.setTargetAtTime(0, t + up + .6, down / 3);
+                        }
+                        wave();
+                    }, rnd(6500, 9500)));
+                })();
+
+                // FEU : souffle des braises (les crépitements sont ponctuels)
+                var ff = filt('lowpass', 260), fg = ctx.createGain(); fg.gain.value = .9;
+                chain(src(brown), ff, fg, bus.fire);
+                lfo(.3, .25, fg.gain);
+
+                startEvents();
+                built = true;
             }
-            function bowl() {               // bol chantant qui résonne longtemps
-                var t = ctx.currentTime + .02, L = lvl.bowl;
-                var f0 = [196, 220, 261.6, 293.7, 329.6][Math.floor(Math.random() * 5)];
-                var out = pan(rnd(-.5, .5), bus.bowl), g = ctx.createGain(); g.gain.value = 1;
-                g.connect(out); g.connect(verbSend);
-                [[1, .16], [2.76, .07], [5.4, .03], [8.9, .012]].forEach(function(p) {
-                    tone(f0 * p[0], t, p[1] * L, .03, 9 / p[0] + 1.5, g);
-                    tone(f0 * p[0] + .7, t, p[1] * L * .8, .03, 9 / p[0] + 1.5, g);   // battement doux
-                });
-            }
-            function chimes() {             // petits carillons qui tintent dans la brise
-                var t = ctx.currentTime + .02, L = lvl.chimes, n = Math.floor(rnd(1, 4));
-                var scale = [1046.5, 1174.7, 1318.5, 1568, 1760, 2093];
-                for (var i = 0; i < n; i++) {
-                    var g = ctx.createGain(); g.gain.value = 1;
-                    g.connect(pan(rnd(-.7, .7), bus.chimes)); g.connect(verbSend);
-                    var f = scale[Math.floor(Math.random() * scale.length)];
-                    tone(f, t + i * rnd(.12, .35), .07 * L, .005, 2.4, g);
-                    tone(f * 2.76, t + i * rnd(.12, .35), .012 * L, .005, .9, g);
-                }
-            }
-            function drip() {               // goutte qui tombe
-                var t = ctx.currentTime + .01, L = lvl.drips, f = rnd(900, 2300);
-                var o = tone(f, t, .05 * L, .004, .14, pan(rnd(-.8, .8), bus.drips));
-                o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .05);
-            }
-            function bird() {               // un oiseau chante quelques notes
-                var t = ctx.currentTime + .02, L = lvl.birds, base = rnd(2300, 4200), n = Math.floor(rnd(3, 8));
-                var up = Math.random() < .5, out = pan(rnd(-.8, .8), bus.birds), g = ctx.createGain();
+
+            // ---------- sons ponctuels ----------
+            function bird() {               // un petit oiseau chante quelques notes
+                var t = ctx.currentTime + .02, L = lvl.birds, out = pan(rnd(-.85, .85), bus.birds), g = ctx.createGain();
                 g.gain.value = 1; g.connect(out); g.connect(verbSend);
+                if (Math.random() < .3) {       // sifflement mélodieux (merle)
+                    var f0 = rnd(1800, 2600), o = tone(f0, t, .06 * L, .04, .55, g);
+                    o.frequency.linearRampToValueAtTime(f0 * 1.35, t + .18);
+                    o.frequency.linearRampToValueAtTime(f0 * 1.1, t + .45);
+                    return;
+                }
+                var base = rnd(2400, 4300), n = Math.floor(rnd(3, 8)), up = Math.random() < .5;
                 for (var i = 0; i < n; i++) {
-                    var st = t + i * rnd(.08, .16), d = rnd(.04, .1), f = base * rnd(.9, 1.15);
-                    var o = tone(f, st, .065 * L, .008, d, g);
-                    o.frequency.exponentialRampToValueAtTime(f * (up ? rnd(1.2, 1.6) : rnd(.6, .85)), st + d);
+                    var st = t + i * rnd(.08, .15), d = rnd(.04, .1), f = base * rnd(.9, 1.15);
+                    var oc = tone(f, st, .06 * L, .008, d, g);
+                    oc.frequency.exponentialRampToValueAtTime(f * (up ? rnd(1.2, 1.6) : rnd(.6, .85)), st + d);
                 }
             }
             var cricketPan = [-.6, .5];
@@ -5181,6 +5184,32 @@
                 var t = ctx.currentTime + .01, L = lvl.crickets, f = which ? 4700 : 4300;
                 var out = pan(cricketPan[which], bus.crickets);
                 for (var i = 0; i < 3; i++) tone(f, t + i * .045, .032 * L, .003, .018, out);
+            }
+            function owl() {                // chouette au loin : « hou… hou-hou »
+                var t = ctx.currentTime + .02, L = lvl.owl, g = ctx.createGain();
+                g.gain.value = 1; g.connect(pan(rnd(-.6, .6), bus.owl)); g.connect(verbSend);
+                var lp = filt('lowpass', 900); lp.connect(g);
+                [[0, .5], [.75, .22], [1.05, .45]].forEach(function(n) {
+                    var o = tone(rnd(355, 375), t + n[0], .09 * L, .06, n[1], lp);
+                    o.frequency.linearRampToValueAtTime(330, t + n[0] + n[1]);
+                });
+            }
+            function drip() {               // goutte qui tombe
+                var t = ctx.currentTime + .01, L = lvl.drips, f = rnd(900, 2300);
+                var o = tone(f, t, .05 * L, .004, .14, pan(rnd(-.8, .8), bus.drips));
+                o.frequency.exponentialRampToValueAtTime(f * 1.9, t + .05);
+            }
+            function thunder() {            // tonnerre lointain qui roule
+                var t = ctx.currentTime + .02, L = lvl.thunder;
+                var s = ctx.createBufferSource(); s.buffer = brown;
+                var lp = filt('lowpass', rnd(160, 280)), g = ctx.createGain();
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(1.1 * L, t + rnd(.15, .4));
+                g.gain.setTargetAtTime(.5 * L, t + .6, .5);
+                g.gain.linearRampToValueAtTime(.9 * L, t + rnd(1.2, 1.8));
+                g.gain.exponentialRampToValueAtTime(.0001, t + rnd(5, 7));
+                chain(s, lp, g, pan(rnd(-.5, .5), bus.thunder)); g.connect(verbSend);
+                s.start(t, Math.random() * 2); s.stop(t + 7.5);
             }
             function crackle() {            // crépitement du feu
                 var t = ctx.currentTime + .005, L = lvl.fire, big = Math.random() < .12;
@@ -5191,27 +5220,17 @@
                 chain(s, h, g, pan(rnd(-.4, .4), master));
                 s.start(t, Math.random() * 3); s.stop(t + d + .05);
             }
-            // chaque son ponctuel a son propre rythme, au hasard, et ne joue que si sa section est à l'écran
-            function every(minMs, maxMs, key, fn) {
-                (function loop() {
-                    timers.push(setTimeout(function() {
-                        if (on && lvl[key] > .03 && !document.hidden) fn();
-                        loop();
-                    }, rnd(minMs, maxMs)));
-                })();
-            }
             function startEvents() {
-                every(1000, 1150, 'heart', heartbeat);
-                every(6500, 12000, 'bowl', bowl);
-                every(2500, 6500, 'chimes', chimes);
-                every(110, 420, 'drips', drip);
-                every(1200, 4500, 'birds', bird);
+                every(900, 3800, 'birds', bird);
                 every(550, 800, 'crickets', function() { cricket(0); });
                 every(700, 1100, 'crickets', function() { cricket(1); });
+                every(7000, 15000, 'owl', owl);
+                every(110, 420, 'drips', drip);
+                every(14000, 26000, 'thunder', thunder);
                 every(25, 220, 'fire', crackle);
             }
 
-            // ---------- section à l'écran -> son ambiance (fondu de l'une à l'autre) ----------
+            // ---------- section à l'écran -> son paysage (fondu de l'un à l'autre) ----------
             var ids = Object.keys(SCENES);
             function sectionAtCenter() {
                 var y = window.innerHeight / 2;
@@ -5234,7 +5253,6 @@
                     bus[k].gain.setTargetAtTime(lvl[k], t, 1.1);
                 });
                 EVENTS.forEach(function(k) { lvl[k] = s[k] || 0; });
-                if (s.fire) lvl.fire = s.fire;
             }
             var ticking = false;
             window.addEventListener('scroll', function() {
@@ -5243,7 +5261,7 @@
                 requestAnimationFrame(function() { applyScene(false); ticking = false; });
             }, { passive: true });
 
-            // la goutte du logo qui tombe sur la frise : petit « plic » dans l'eau
+            // la goutte du logo qui touche la frise : petit « plic » dans l'eau
             window.addEventListener('orr:drop', function() {
                 if (!built || !on) return;
                 var t = ctx.currentTime + .01, g = ctx.createGain(); g.gain.value = 1;

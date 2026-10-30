@@ -4782,192 +4782,334 @@
             })(document.getElementById('creations'));
         })();
     </script>
-    <!-- ===== AMBIANCE SONORE (sons créés dans le navigateur, coupée par défaut) ===== -->
+    <!-- ===== MUSIQUE VIVANTE (générée en direct dans le navigateur, coupée par défaut) ===== -->
     <script>
         (function() {
             'use strict';
             var AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
 
-            // --- bouton son ---
+            // ---------- bouton son ----------
             var btn = document.createElement('button');
             btn.className = 'snd-btn';
             btn.type = 'button';
             btn.setAttribute('aria-pressed', 'false');
-            btn.setAttribute('aria-label', 'Activer le son');
+            btn.setAttribute('aria-label', 'Activer la musique');
             btn.innerHTML = '<span class="snd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="snd-label">Son</span>';
             document.body.appendChild(btn);
 
-            var ctx = null, master = null, layers = {}, on = false, drumTimer = 0, dropTimer = 0, current = '';
+            var ctx, master, comp, verb, verbSend, bus = {}, on = false, built = false;
+            var notes = {}, scene = 'essence', sceneTarget = null;
 
-            function noiseBuffer() {
-                var len = ctx.sampleRate * 3, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+            // ---------- gamme : maqam Hijaz sur Ré (couleur orientale) ----------
+            var D3 = 146.83;
+            var HIJAZ = [0, 1, 4, 5, 7, 8, 10];              // demi-tons : Ré Mi♭ Fa♯ Sol La Si♭ Do
+            function freq(deg, oct) {                           // degré dans la gamme -> fréquence
+                var o = Math.floor(deg / 7), d = ((deg % 7) + 7) % 7;
+                return D3 * Math.pow(2, (oct || 0) + o + HIJAZ[d] / 12);
+            }
+
+            // ---------- réverbération chaude (réponse impulsionnelle générée) ----------
+            function impulse(sec, decay) {
+                var len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, len, ctx.sampleRate);
+                for (var c = 0; c < 2; c++) {
+                    var d = b.getChannelData(c);
+                    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+                }
+                return b;
+            }
+
+            // ---------- corde pincée (Karplus-Strong) pré-calculée : oud et qanun ----------
+            function pluck(f, dur, bright, body) {
+                var sr = ctx.sampleRate, len = Math.floor(sr * dur), b = ctx.createBuffer(1, len, sr), out = b.getChannelData(0);
+                var N = Math.max(2, Math.round(sr / f)), buf = new Float32Array(N), i;
+                for (i = 0; i < N; i++) buf[i] = Math.random() * 2 - 1;
+                // excitation adoucie (plectre en plume pour l'oud)
+                for (var k = 0; k < body; k++) for (i = 1; i < N; i++) buf[i] = (buf[i] + buf[i - 1]) * .5;
+                var p = 0, last = 0;
+                for (i = 0; i < len; i++) {
+                    var cur = buf[p], nxt = buf[(p + 1) % N];
+                    var v = bright * cur + (1 - bright) * (cur + nxt) * .5;
+                    buf[p] = v * .996;
+                    out[i] = v * (1 - Math.exp(-i / 40));
+                    p = (p + 1) % N;
+                    last = v;
+                }
+                return b;
+            }
+            function prepare() {
+                notes.oud = {}; notes.qanun = {};
+                for (var d = -3; d <= 10; d++) notes.oud[d] = pluck(freq(d, 0), 2.4, .35, 2);
+                for (var q = 0; q <= 14; q++) notes.qanun[q] = pluck(freq(q, 0), 2.2, .62, 0);
+            }
+
+            // ---------- construction du graphe ----------
+            function build() {
+                ctx = new AC();
+                master = ctx.createGain(); master.gain.value = 0;
+                comp = ctx.createDynamicsCompressor();
+                comp.threshold.value = -18; comp.ratio.value = 3; comp.attack.value = .01; comp.release.value = .25;
+                verb = ctx.createConvolver(); verb.buffer = impulse(3.6, 2.6);
+                verbSend = ctx.createGain(); verbSend.gain.value = .55;
+                master.connect(comp); comp.connect(ctx.destination);
+                verbSend.connect(verb); verb.connect(comp);
+                ['oud', 'qanun', 'ney', 'drum', 'drone', 'rain', 'wind', 'fx'].forEach(function(k) {
+                    var g = ctx.createGain(); g.gain.value = 0;
+                    g.connect(master); g.connect(verbSend);
+                    bus[k] = g;
+                });
+                bus.fx.gain.value = .9;
+                prepare();
+                buildDrone(); buildRain(); buildWind();
+                built = true;
+            }
+            function noiseBuf(sec) {
+                var len = ctx.sampleRate * sec, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
                 for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
                 return b;
             }
-            function noiseSource(buf) {
-                var s = ctx.createBufferSource();
-                s.buffer = buf; s.loop = true; s.start();
-                return s;
+            function loopNoise(target, type, f, q, gain) {
+                var s = ctx.createBufferSource(); s.buffer = noiseBuf(3); s.loop = true;
+                var fl = ctx.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q || .7;
+                var g = ctx.createGain(); g.gain.value = gain;
+                s.connect(fl); fl.connect(g); g.connect(target); s.start();
+                return { f: fl, g: g };
             }
-            function lfo(freq, depth, target) {
+            function lfo(rate, depth, param) {
                 var o = ctx.createOscillator(), g = ctx.createGain();
-                o.frequency.value = freq; g.gain.value = depth;
-                o.connect(g); g.connect(target); o.start();
+                o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param); o.start();
             }
-
-            function build() {
-                ctx = new AC();
-                master = ctx.createGain();
-                master.gain.value = 0;
-                // léger écho chaud qui donne de l'espace à tout
-                var delay = ctx.createDelay(1), fb = ctx.createGain(), wet = ctx.createGain();
-                delay.delayTime.value = .32; fb.gain.value = .28; wet.gain.value = .22;
-                delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(ctx.destination);
-                master.connect(ctx.destination); master.connect(delay);
-                var nb = noiseBuffer();
-
-                // 1. Vent (dunes) : bruit filtré dont la hauteur et le souffle ondulent lentement
-                var wind = ctx.createGain(); wind.gain.value = 0; wind.connect(master);
-                var wf = ctx.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 520; wf.Q.value = .9;
-                var wg = ctx.createGain(); wg.gain.value = .55;
-                noiseSource(nb).connect(wf); wf.connect(wg); wg.connect(wind);
-                lfo(.06, 260, wf.frequency); lfo(.045, .3, wg.gain);
-                layers.wind = wind;
-
-                // 2. Pluie douce : bruit aigu très léger + gouttes et petits tintements aléatoires
-                var rain = ctx.createGain(); rain.gain.value = 0; rain.connect(master);
-                var rh = ctx.createBiquadFilter(); rh.type = 'highpass'; rh.frequency.value = 2400;
-                var rl = ctx.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 8000;
-                var rg = ctx.createGain(); rg.gain.value = .07;
-                noiseSource(nb).connect(rh); rh.connect(rl); rl.connect(rg); rg.connect(rain);
-                layers.rain = rain;
-
-                // 3. Bourdon chaud : deux notes graves légèrement désaccordées qui « respirent »
-                var drone = ctx.createGain(); drone.gain.value = 0; drone.connect(master);
-                var dl = ctx.createBiquadFilter(); dl.type = 'lowpass'; dl.frequency.value = 700; dl.connect(drone);
-                [[110, 'sine', .22], [110.7, 'sine', .2], [164.8, 'triangle', .07], [220.4, 'sine', .05]].forEach(function(n) {
+            // bourdon façon tanpura : Ré grave + La, qui respirent
+            function buildDrone() {
+                var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(bus.drone);
+                [[D3 / 2, .18, 'sawtooth'], [D3 / 2 * 1.003, .12, 'sawtooth'], [D3 * .75, .08, 'triangle'], [D3, .06, 'sine']].forEach(function(n) {
                     var o = ctx.createOscillator(), g = ctx.createGain();
-                    o.type = n[1]; o.frequency.value = n[0]; g.gain.value = n[2];
-                    o.connect(g); g.connect(dl); o.start();
+                    o.type = n[2]; o.frequency.value = n[0]; g.gain.value = n[1];
+                    o.connect(g); g.connect(lp); o.start();
                 });
-                lfo(.08, 220, dl.frequency);
-                layers.drone = drone;
-                layers.drum = 0;
+                lfo(.07, 380, lp.frequency);
+            }
+            function buildRain() {
+                loopNoise(bus.rain, 'highpass', 2600, .5, .12);
+                var low = loopNoise(bus.rain, 'lowpass', 500, .5, .05);
+                lfo(.11, .03, low.g.gain);
+            }
+            function buildWind() {
+                var w = loopNoise(bus.wind, 'bandpass', 520, .9, .55);
+                lfo(.06, 300, w.f.frequency); lfo(.045, .32, w.g.gain);
             }
 
-            // --- sons ponctuels ---
-            function drip(level) {
-                if (!ctx || !on) return;
-                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-                var f = 900 + Math.random() * 1400;
-                o.type = 'sine';
-                o.frequency.setValueAtTime(f, t);
-                o.frequency.exponentialRampToValueAtTime(f * 1.8, t + .05);
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(.05 * level, t + .005);
-                g.gain.exponentialRampToValueAtTime(.0001, t + .18);
-                o.connect(g); g.connect(master); o.start(t); o.stop(t + .2);
+            // ---------- instruments joués ----------
+            function playBuf(buf, t, bus_, gain, pan, rate) {
+                var s = ctx.createBufferSource(), g = ctx.createGain(), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+                s.buffer = buf; if (rate) s.playbackRate.value = rate;
+                g.gain.value = gain;
+                s.connect(g);
+                if (p) { p.pan.value = pan || 0; g.connect(p); p.connect(bus_); } else g.connect(bus_);
+                s.start(t);
             }
-            function plop() {          // la goutte du logo qui tombe sur la frise
-                if (!ctx || !on) return;
-                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-                o.type = 'sine';
-                o.frequency.setValueAtTime(320, t);
-                o.frequency.exponentialRampToValueAtTime(1100, t + .07);
+            function oud(deg, t, vel) { var b = notes.oud[Math.max(-3, Math.min(10, deg))]; if (b) playBuf(b, t, bus.oud, .55 * (vel || 1), -.2); }
+            function qanun(deg, t, vel, pan) { var b = notes.qanun[Math.max(0, Math.min(14, deg))]; if (b) playBuf(b, t, bus.qanun, .32 * (vel || 1), pan == null ? .25 : pan); }
+            // ney : flûte de roseau, souffle + vibrato, glisse d'une note à l'autre
+            function ney(degs, t, step) {
+                var o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+                o.type = 'sine'; o2.type = 'triangle';
+                f.type = 'lowpass'; f.frequency.value = 2200;
+                var vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.2; vg.gain.value = 0;
+                vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+                var br = ctx.createBufferSource(); br.buffer = noiseBuf(1); br.loop = true;
+                var bf = ctx.createBiquadFilter(); bf.type = 'bandpass'; bf.Q.value = 1.2; var bg = ctx.createGain(); bg.gain.value = .05;
+                br.connect(bf); bf.connect(bg); bg.connect(g);
+                var o2g = ctx.createGain(); o2g.gain.value = .25; o2.connect(o2g); o2g.connect(f); o.connect(f); f.connect(g); g.connect(bus.ney);
+                var tt = t, end = t + degs.length * step;
                 g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(.32, t + .006);
-                g.gain.exponentialRampToValueAtTime(.0001, t + .32);
-                o.connect(g); g.connect(master); o.start(t); o.stop(t + .35);
+                g.gain.linearRampToValueAtTime(.32, t + .35);
+                vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(3.5, t + .9);
+                degs.forEach(function(d) {
+                    var fr = freq(d, 1);
+                    o.frequency.setTargetAtTime(fr, tt, .06); o2.frequency.setTargetAtTime(fr, tt, .06); bf.frequency.setTargetAtTime(fr * 2, tt, .06);
+                    tt += step;
+                });
+                g.gain.setValueAtTime(.32, end - .4);
+                g.gain.linearRampToValueAtTime(0, end + .2);
+                [o, o2, vib, br].forEach(function(n) { n.start(t); n.stop(end + .3); });
             }
-            function chime() {         // tintement doré quand on active le son
-                if (!ctx) return;
-                var t = ctx.currentTime;
-                [[1046.5, .12], [1568, .07], [2093, .05], [2637, .03]].forEach(function(p, i) {
+            // darbouka : doum (grave), tak (aigu), ka (léger) ; bendir : grave et rond
+            function drum(kind, t, vel) {
+                vel = vel || 1;
+                if (kind === 'doum' || kind === 'bendir') {
                     var o = ctx.createOscillator(), g = ctx.createGain();
-                    o.type = 'sine'; o.frequency.value = p[0] * (1 + i * .0015);
-                    g.gain.setValueAtTime(0, t);
-                    g.gain.linearRampToValueAtTime(p[1], t + .01);
-                    g.gain.exponentialRampToValueAtTime(.0001, t + 2.6);
-                    o.connect(g); g.connect(master); o.start(t); o.stop(t + 2.7);
+                    var f0 = kind === 'doum' ? 110 : 80;
+                    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f0 * .55, t + .25);
+                    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.7 * vel, t + .005); g.gain.exponentialRampToValueAtTime(.001, t + (kind === 'doum' ? .45 : .8));
+                    o.connect(g); g.connect(bus.drum); o.start(t); o.stop(t + .9);
+                }
+                if (kind !== 'bendir') {
+                    var s = ctx.createBufferSource(); s.buffer = noiseBuf(.3);
+                    var f = ctx.createBiquadFilter(); f.type = 'bandpass';
+                    f.frequency.value = kind === 'doum' ? 400 : (kind === 'tak' ? 3200 : 2400); f.Q.value = kind === 'doum' ? .8 : 2.5;
+                    var ng = ctx.createGain(), len = kind === 'doum' ? .12 : (kind === 'tak' ? .09 : .05);
+                    var lv = kind === 'doum' ? .25 : (kind === 'tak' ? .5 : .22);
+                    ng.gain.setValueAtTime(lv * vel, t); ng.gain.exponentialRampToValueAtTime(.001, t + len);
+                    s.connect(f); f.connect(ng);
+                    var pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+                    if (pn) { pn.pan.value = kind === 'ka' ? .3 : (kind === 'tak' ? .15 : 0); ng.connect(pn); pn.connect(bus.drum); } else ng.connect(bus.drum);
+                    s.start(t); s.stop(t + .3);
+                }
+            }
+            function bell(deg, t, vel) {   // petite cloche dorée (goutte d'or)
+                var fr = freq(deg, 2);
+                [[1, .12], [2.76, .05], [5.4, .02]].forEach(function(h) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.frequency.value = fr * h[0];
+                    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(h[1] * (vel || 1), t + .004);
+                    g.gain.exponentialRampToValueAtTime(.0001, t + 1.6);
+                    o.connect(g); g.connect(bus.fx); o.start(t); o.stop(t + 1.7);
                 });
             }
-            function drum() {          // bendir lointain
-                if (!ctx || !on || layers.drum < .05) return;
-                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-                o.type = 'sine';
-                o.frequency.setValueAtTime(95, t);
-                o.frequency.exponentialRampToValueAtTime(52, t + .35);
-                g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(.38 * layers.drum, t + .008);
-                g.gain.exponentialRampToValueAtTime(.0001, t + .9);
-                o.connect(g); g.connect(master); o.start(t); o.stop(t + 1);
-                if (Math.random() < .55) setTimeout(drum.bind(null), 260 + Math.random() * 120);
-            }
 
-            // --- ambiance selon la section à l'écran ---
-            var MIX = {
-                essence:    { drone: .55, rain: 0,   wind: .1,  drum: 0 },
-                memoire:    { drone: .8,  rain: 0,   wind: .15, drum: 1 },
-                manifeste:  { drone: .6,  rain: .35, wind: 0,   drum: .4 },
-                origine:    { drone: .25, rain: 1,   wind: 0,   drum: 0 },
-                orr:        { drone: .7,  rain: .2,  wind: .1,  drum: .6 },
-                creations:  { drone: .2,  rain: .3,  wind: 1,   drum: 0 },
-                histoire:   { drone: .8,  rain: 0,   wind: .15, drum: 1 },
-                fondatrice: { drone: .6,  rain: .35, wind: 0,   drum: .3 },
-                communaute: { drone: .45, rain: .4,  wind: .1,  drum: 0 }
+            // ---------- scènes : quels instruments jouent dans chaque section ----------
+            var SCENES = {
+                essence:    { drone: .5,  ney: .9, oud: 0,   qanun: .3, drum: .35, rain: 0,  wind: .1, rhythm: 'bendir', melody: 'ney',   density: .5 },
+                memoire:    { drone: .65, ney: .6, oud: .5,  qanun: 0,  drum: .7,  rain: 0,  wind: .1, rhythm: 'bendir', melody: 'oud',   density: .45 },
+                manifeste:  { drone: .5,  ney: 0,  oud: .85, qanun: .3, drum: .5,  rain: .2, wind: 0,  rhythm: 'maqsum', melody: 'oud',   density: .7 },
+                origine:    { drone: .3,  ney: .5, oud: 0,   qanun: .9, drum: 0,   rain: .8, wind: 0,  rhythm: null,     melody: 'qanun', density: .8 },
+                orr:        { drone: .5,  ney: 0,  oud: .9,  qanun: .5, drum: .9,  rain: 0,  wind: 0,  rhythm: 'maqsum', melody: 'oud',   density: .85 },
+                creations:  { drone: .25, ney: .8, oud: 0,   qanun: .6, drum: .25, rain: .2, wind: .9, rhythm: 'bendir', melody: 'ney',   density: .45 },
+                histoire:   { drone: .6,  ney: .8, oud: .4,  qanun: 0,  drum: .6,  rain: 0,  wind: .1, rhythm: 'bendir', melody: 'ney',   density: .5 },
+                fondatrice: { drone: .5,  ney: 0,  oud: .7,  qanun: .4, drum: .3,  rain: .2, wind: 0,  rhythm: 'bendir', melody: 'oud',   density: .55 },
+                communaute: { drone: .4,  ney: .3, oud: .6,  qanun: .6, drum: .8,  rain: .2, wind: 0,  rhythm: 'maqsum', melody: 'qanun', density: .75 }
             };
+            function setScene(id) {
+                if (!SCENES[id] || id === scene && sceneTarget) return;
+                scene = id; sceneTarget = SCENES[id];
+                var t = ctx.currentTime;
+                ['drone', 'ney', 'oud', 'qanun', 'drum', 'rain', 'wind'].forEach(function(k) { bus[k].gain.setTargetAtTime(sceneTarget[k], t, 1.4); });
+            }
             function sectionAtCenter() {
-                var y = window.innerHeight / 2, ids = Object.keys(MIX);
+                var y = window.innerHeight / 2, ids = Object.keys(SCENES);
                 for (var i = 0; i < ids.length; i++) {
                     var el = document.getElementById(ids[i]);
                     if (!el) continue;
                     var r = el.getBoundingClientRect();
                     if (r.top <= y && r.bottom >= y) return ids[i];
                 }
-                return current || 'essence';
+                return scene;
             }
-            function applyMix() {
-                if (!ctx || !on) return;
-                var id = sectionAtCenter();
-                if (id === current) return;
-                current = id;
-                var m = MIX[id], t = ctx.currentTime;
-                ['drone', 'rain', 'wind'].forEach(function(k) { layers[k].gain.setTargetAtTime(m[k], t, 1.2); });
-                layers.drum = m.drum;
+
+            // ---------- séquenceur : tempo 84, mesure à 8 croches ----------
+            var BPM = 84, STEP = 60 / BPM / 2, nextTime = 0, step = 0, timer = 0;
+            var MAQSUM = ['doum', 'tak', null, 'tak', 'doum', null, 'tak', null];   // rythme maqsoum
+            var BENDIR = ['bendir', null, null, 'ka', 'bendir', null, 'ka', null];
+            var melodyPos = 0, phrase = [], phraseIdx = 0, rest = 0;
+            function newPhrase() {               // petite phrase improvisée, qui finit sur Ré ou La
+                var len = 4 + Math.floor(Math.random() * 5), p = [], d = melodyPos;
+                for (var i = 0; i < len; i++) {
+                    d += [-2, -1, -1, 1, 1, 2, 0, 3][Math.floor(Math.random() * 8)];
+                    d = Math.max(0, Math.min(9, d));
+                    p.push(d);
+                }
+                p.push(Math.random() < .6 ? 0 : 4);
+                melodyPos = p[p.length - 1];
+                return p;
             }
+            function schedule() {
+                if (!on) return;
+                while (nextTime < ctx.currentTime + .15) {
+                    var s = sceneTarget, b = step % 8, t = nextTime;
+                    // percussions
+                    var pat = s.rhythm === 'maqsum' ? MAQSUM : (s.rhythm === 'bendir' ? BENDIR : null);
+                    if (pat && pat[b] && s.drum > .05) drum(pat[b], t + (Math.random() - .5) * .01, .75 + Math.random() * .25);
+                    if (s.rhythm === 'maqsum' && b % 2 === 1 && Math.random() < .35 * s.density) drum('ka', t, .5);
+                    // mélodie
+                    if (rest > 0) rest--;
+                    else if (s.melody === 'oud' && Math.random() < s.density) {
+                        if (phraseIdx >= phrase.length) { phrase = newPhrase(); phraseIdx = 0; rest = 2 + Math.floor(Math.random() * 4); }
+                        else {
+                            var d = phrase[phraseIdx++];
+                            oud(d, t, .7 + Math.random() * .3);
+                            if (Math.random() < .2) oud(d, t + STEP / 2, .5);            // petit trémolo
+                        }
+                    } else if (s.melody === 'qanun' && Math.random() < s.density) {
+                        var base = [0, 2, 4, 7][Math.floor(step / 8) % 4];
+                        qanun(base + [0, 2, 4, 7, 9, 7, 4, 2][b], t, .6 + Math.random() * .3, (b - 3.5) / 5);
+                    } else if (s.melody === 'ney' && b === 0 && step % 32 === 0 && Math.random() < .85) {
+                        ney(newPhrase().slice(0, 5), t + .1, STEP * 2.6);
+                    }
+                    // touches d'accompagnement
+                    if (s.qanun > .1 && s.melody !== 'qanun' && b === 4 && Math.random() < .3) {
+                        var r0 = Math.floor(Math.random() * 3);
+                        for (var k = 0; k < 4; k++) qanun(r0 + k * 2, t + k * .07, .45, -.3 + k * .2);
+                    }
+                    if (s.oud > .1 && s.melody !== 'oud' && b === 0 && step % 16 === 0) oud(0, t, .6);
+                    nextTime += STEP * (b % 2 === 0 ? 1.06 : .94);   // léger balancement
+                    step++;
+                }
+            }
+
+            // ---------- interactions : le site répond au visiteur ----------
+            var lastHover = 0;
+            document.addEventListener('pointerover', function(e) {
+                if (!on || !built) return;
+                var el = e.target.closest && e.target.closest('a, button, .crea, .com, .og-img, .theme-card, .founder-nav-btn, .founder-nav-btn-mobile');
+                if (!el || el === btn || el.contains(e.relatedTarget)) return;
+                var now = ctx.currentTime;
+                if (now - lastHover < .08) return;
+                lastHover = now;
+                var deg = 3 + Math.round((e.clientX / window.innerWidth) * 8);   // la note suit la position de la souris
+                qanun(deg, now, .55, (e.clientX / window.innerWidth) * 2 - 1);
+            });
+            document.addEventListener('click', function(e) {
+                if (!on || !built || (e.target.closest && e.target.closest('.snd-btn'))) return;
+                var t = ctx.currentTime;
+                [0, 4, 7, 9].forEach(function(d, i) { oud(d, t + i * .045, .7); });      // accord égrené
+            });
+            window.addEventListener('orr:drop', function() {   // la goutte du logo qui tombe sur la frise
+                if (!on || !built) return;
+                var t = ctx.currentTime;
+                bell(0, t, 1.4); bell(4, t + .12, .9); drum('bendir', t, .9);
+            });
+            // les gouttes d'or tintent doucement de temps en temps
+            setInterval(function() {
+                if (!on || !built || !sceneTarget) return;
+                if (Math.random() < (sceneTarget.rain > .3 ? .5 : .15)) bell(Math.floor(Math.random() * 8), ctx.currentTime, .35 + Math.random() * .3);
+            }, 900);
+
             var ticking = false;
             window.addEventListener('scroll', function() {
                 if (ticking || !on) return;
                 ticking = true;
-                requestAnimationFrame(function() { applyMix(); ticking = false; });
+                requestAnimationFrame(function() { setScene(sectionAtCenter()); ticking = false; });
             }, { passive: true });
 
+            // ---------- marche / arrêt ----------
             function setOn(v) {
                 on = v;
                 btn.classList.toggle('is-on', on);
                 btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-                btn.setAttribute('aria-label', on ? 'Couper le son' : 'Activer le son');
+                btn.setAttribute('aria-label', on ? 'Couper la musique' : 'Activer la musique');
                 try { localStorage.setItem('orr-son', on ? '1' : '0'); } catch (e) {}
                 if (on) {
-                    if (!ctx) build();
+                    if (!built) build();
                     ctx.resume();
-                    master.gain.setTargetAtTime(.5, ctx.currentTime, .6);
-                    current = '';
-                    applyMix();
-                    chime();
-                    clearInterval(drumTimer); clearInterval(dropTimer);
-                    drumTimer = setInterval(function() { if (Math.random() < .6) drum(); }, 4200);
-                    dropTimer = setInterval(function() { if (layers.rain && layers.rain.gain.value > .15 && Math.random() < .7) drip(layers.rain.gain.value); }, 380);
+                    master.gain.cancelScheduledValues(ctx.currentTime);
+                    master.gain.setTargetAtTime(.75, ctx.currentTime, .8);
+                    sceneTarget = null; setScene(sectionAtCenter());
+                    nextTime = ctx.currentTime + .1;
+                    clearInterval(timer); timer = setInterval(schedule, 25);
+                    // ouverture : accord du qanun et cloche
+                    var t = ctx.currentTime + .05;
+                    for (var k = 0; k < 6; k++) qanun(k * 2, t + k * .06, .5, -.5 + k * .2);
+                    bell(7, t + .4, .8);
                 } else if (ctx) {
-                    master.gain.setTargetAtTime(0, ctx.currentTime, .3);
-                    clearInterval(drumTimer); clearInterval(dropTimer);
-                    setTimeout(function() { if (!on) ctx.suspend(); }, 1500);
+                    master.gain.setTargetAtTime(0, ctx.currentTime, .35);
+                    clearInterval(timer);
+                    setTimeout(function() { if (!on) ctx.suspend(); }, 1600);
                 }
             }
             btn.addEventListener('click', function() { setOn(!on); });
 
-            // le visiteur avait déjà activé le son : on le relance à sa première interaction
+            // le visiteur avait déjà activé la musique : elle reprend à sa première interaction
             var saved = false;
             try { saved = localStorage.getItem('orr-son') === '1'; } catch (e) {}
             if (saved) {
@@ -4976,18 +5118,15 @@
                     window.removeEventListener('pointerdown', resume);
                     window.removeEventListener('keydown', resume);
                     btn.classList.remove('is-pending');
-                    // un clic sur le bouton lui-même est géré par le bouton
                     if (e && e.target && e.target.closest && e.target.closest('.snd-btn')) return;
                     if (!on) setOn(true);
                 };
                 window.addEventListener('pointerdown', resume);
                 window.addEventListener('keydown', resume);
             }
-
-            window.addEventListener('orr:drop', plop);
             document.addEventListener('visibilitychange', function() {
                 if (!ctx || !on) return;
-                if (document.hidden) ctx.suspend(); else ctx.resume();
+                if (document.hidden) ctx.suspend(); else { ctx.resume(); nextTime = ctx.currentTime + .1; }
             });
         })();
     </script>

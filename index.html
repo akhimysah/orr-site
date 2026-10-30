@@ -3039,6 +3039,14 @@
                 mask-composite: intersect;
             }
         }
+        @media (min-width: 941px) {
+            /* safran : plus petit, moins envahissant */
+            .og-row > .og-img:first-child img[src*="origine-safran"],
+            .og-row > .og-img:first-child:hover img[src*="origine-safran"] {
+                height: min(82%, 33vw);
+                transform: translate(-3%, -50%);
+            }
+        }
         /* --- Communauté : la photo du mur peint en fond de toute la section --- */
         #communaute {
             background-image:

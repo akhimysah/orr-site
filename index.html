@@ -3027,6 +3027,78 @@
                 transform: translateX(calc(15.6% + 30px));
             }
         }
+
+        /* ===== BOUTON SON ===== */
+        .snd-btn {
+            position: fixed;
+            left: 18px;
+            bottom: 18px;
+            z-index: 9985;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            height: 42px;
+            padding: 0 16px 0 14px;
+            border-radius: 21px;
+            border: 1px solid rgba(212, 175, 127, .55);
+            background: rgba(74, 8, 16, .82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #E8CFA0;
+            font-size: 10px;
+            letter-spacing: .28em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background .4s, border-color .4s, transform .4s;
+        }
+        .snd-btn:hover {
+            background: rgba(74, 8, 16, .95);
+            border-color: rgba(212, 175, 127, .9);
+        }
+        .snd-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 14px;
+        }
+        .snd-bars i {
+            display: block;
+            width: 2px;
+            height: 3px;
+            background: currentColor;
+            border-radius: 1px;
+            transition: height .3s;
+        }
+        /* son actif : petites barres qui dansent */
+        .snd-btn.is-on .snd-bars i {
+            animation: sndBar 1.1s ease-in-out infinite alternate;
+        }
+        .snd-btn.is-on .snd-bars i:nth-child(2) { animation-delay: -.4s; }
+        .snd-btn.is-on .snd-bars i:nth-child(3) { animation-delay: -.8s; }
+        .snd-btn.is-on .snd-bars i:nth-child(4) { animation-delay: -.2s; }
+        @keyframes sndBar {
+            from { height: 3px; }
+            to { height: 14px; }
+        }
+        /* son coupé : barres basses barrées d'un fin trait */
+        .snd-btn:not(.is-on) .snd-bars {
+            opacity: .75;
+        }
+        .snd-btn.is-pending {
+            animation: sndPulse 2.4s ease-in-out infinite;
+        }
+        @keyframes sndPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 127, .35); }
+            50% { box-shadow: 0 0 0 8px rgba(212, 175, 127, 0); }
+        }
+        @media (max-width: 600px) {
+            .snd-btn .snd-label {
+                display: none;
+            }
+            .snd-btn {
+                padding: 0 13px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -4288,6 +4360,7 @@
                     // arrivée au bout : la goutte s'étale et est absorbée
                     if (!fadeOut && !absorbed && shown > .995) {
                         absorbed = now;
+                        window.dispatchEvent(new CustomEvent('orr:drop'));
                         // il reste une petite perle là où la goutte s'est arrêtée
                         var ey = y0 + shown * (yEnd - y0);
                         beads.push({ x: pathX(ey, 72 * k * 1.35), y: ey, r: 72 * k * 1.35 * .2, t: now });
@@ -4683,6 +4756,215 @@
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
                 }).observe(section);
             })(document.getElementById('creations'));
+        })();
+    </script>
+    <!-- ===== AMBIANCE SONORE (sons créés dans le navigateur, coupée par défaut) ===== -->
+    <script>
+        (function() {
+            'use strict';
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+
+            // --- bouton son ---
+            var btn = document.createElement('button');
+            btn.className = 'snd-btn';
+            btn.type = 'button';
+            btn.setAttribute('aria-pressed', 'false');
+            btn.setAttribute('aria-label', 'Activer le son');
+            btn.innerHTML = '<span class="snd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="snd-label">Son</span>';
+            document.body.appendChild(btn);
+
+            var ctx = null, master = null, layers = {}, on = false, drumTimer = 0, dropTimer = 0, current = '';
+
+            function noiseBuffer() {
+                var len = ctx.sampleRate * 3, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+                for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+                return b;
+            }
+            function noiseSource(buf) {
+                var s = ctx.createBufferSource();
+                s.buffer = buf; s.loop = true; s.start();
+                return s;
+            }
+            function lfo(freq, depth, target) {
+                var o = ctx.createOscillator(), g = ctx.createGain();
+                o.frequency.value = freq; g.gain.value = depth;
+                o.connect(g); g.connect(target); o.start();
+            }
+
+            function build() {
+                ctx = new AC();
+                master = ctx.createGain();
+                master.gain.value = 0;
+                // léger écho chaud qui donne de l'espace à tout
+                var delay = ctx.createDelay(1), fb = ctx.createGain(), wet = ctx.createGain();
+                delay.delayTime.value = .32; fb.gain.value = .28; wet.gain.value = .22;
+                delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(ctx.destination);
+                master.connect(ctx.destination); master.connect(delay);
+                var nb = noiseBuffer();
+
+                // 1. Vent (dunes) : bruit filtré dont la hauteur et le souffle ondulent lentement
+                var wind = ctx.createGain(); wind.gain.value = 0; wind.connect(master);
+                var wf = ctx.createBiquadFilter(); wf.type = 'bandpass'; wf.frequency.value = 520; wf.Q.value = .9;
+                var wg = ctx.createGain(); wg.gain.value = .55;
+                noiseSource(nb).connect(wf); wf.connect(wg); wg.connect(wind);
+                lfo(.06, 260, wf.frequency); lfo(.045, .3, wg.gain);
+                layers.wind = wind;
+
+                // 2. Pluie douce : bruit aigu très léger + gouttes et petits tintements aléatoires
+                var rain = ctx.createGain(); rain.gain.value = 0; rain.connect(master);
+                var rh = ctx.createBiquadFilter(); rh.type = 'highpass'; rh.frequency.value = 2400;
+                var rl = ctx.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 8000;
+                var rg = ctx.createGain(); rg.gain.value = .07;
+                noiseSource(nb).connect(rh); rh.connect(rl); rl.connect(rg); rg.connect(rain);
+                layers.rain = rain;
+
+                // 3. Bourdon chaud : deux notes graves légèrement désaccordées qui « respirent »
+                var drone = ctx.createGain(); drone.gain.value = 0; drone.connect(master);
+                var dl = ctx.createBiquadFilter(); dl.type = 'lowpass'; dl.frequency.value = 700; dl.connect(drone);
+                [[110, 'sine', .22], [110.7, 'sine', .2], [164.8, 'triangle', .07], [220.4, 'sine', .05]].forEach(function(n) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = n[1]; o.frequency.value = n[0]; g.gain.value = n[2];
+                    o.connect(g); g.connect(dl); o.start();
+                });
+                lfo(.08, 220, dl.frequency);
+                layers.drone = drone;
+                layers.drum = 0;
+            }
+
+            // --- sons ponctuels ---
+            function drip(level) {
+                if (!ctx || !on) return;
+                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+                var f = 900 + Math.random() * 1400;
+                o.type = 'sine';
+                o.frequency.setValueAtTime(f, t);
+                o.frequency.exponentialRampToValueAtTime(f * 1.8, t + .05);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(.05 * level, t + .005);
+                g.gain.exponentialRampToValueAtTime(.0001, t + .18);
+                o.connect(g); g.connect(master); o.start(t); o.stop(t + .2);
+            }
+            function plop() {          // la goutte du logo qui tombe sur la frise
+                if (!ctx || !on) return;
+                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(320, t);
+                o.frequency.exponentialRampToValueAtTime(1100, t + .07);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(.32, t + .006);
+                g.gain.exponentialRampToValueAtTime(.0001, t + .32);
+                o.connect(g); g.connect(master); o.start(t); o.stop(t + .35);
+            }
+            function chime() {         // tintement doré quand on active le son
+                if (!ctx) return;
+                var t = ctx.currentTime;
+                [[1046.5, .12], [1568, .07], [2093, .05], [2637, .03]].forEach(function(p, i) {
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.type = 'sine'; o.frequency.value = p[0] * (1 + i * .0015);
+                    g.gain.setValueAtTime(0, t);
+                    g.gain.linearRampToValueAtTime(p[1], t + .01);
+                    g.gain.exponentialRampToValueAtTime(.0001, t + 2.6);
+                    o.connect(g); g.connect(master); o.start(t); o.stop(t + 2.7);
+                });
+            }
+            function drum() {          // bendir lointain
+                if (!ctx || !on || layers.drum < .05) return;
+                var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(95, t);
+                o.frequency.exponentialRampToValueAtTime(52, t + .35);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(.38 * layers.drum, t + .008);
+                g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+                o.connect(g); g.connect(master); o.start(t); o.stop(t + 1);
+                if (Math.random() < .55) setTimeout(drum.bind(null), 260 + Math.random() * 120);
+            }
+
+            // --- ambiance selon la section à l'écran ---
+            var MIX = {
+                essence:    { drone: .55, rain: 0,   wind: .1,  drum: 0 },
+                memoire:    { drone: .8,  rain: 0,   wind: .15, drum: 1 },
+                manifeste:  { drone: .6,  rain: .35, wind: 0,   drum: .4 },
+                origine:    { drone: .25, rain: 1,   wind: 0,   drum: 0 },
+                orr:        { drone: .7,  rain: .2,  wind: .1,  drum: .6 },
+                creations:  { drone: .2,  rain: .3,  wind: 1,   drum: 0 },
+                histoire:   { drone: .8,  rain: 0,   wind: .15, drum: 1 },
+                fondatrice: { drone: .6,  rain: .35, wind: 0,   drum: .3 },
+                communaute: { drone: .45, rain: .4,  wind: .1,  drum: 0 }
+            };
+            function sectionAtCenter() {
+                var y = window.innerHeight / 2, ids = Object.keys(MIX);
+                for (var i = 0; i < ids.length; i++) {
+                    var el = document.getElementById(ids[i]);
+                    if (!el) continue;
+                    var r = el.getBoundingClientRect();
+                    if (r.top <= y && r.bottom >= y) return ids[i];
+                }
+                return current || 'essence';
+            }
+            function applyMix() {
+                if (!ctx || !on) return;
+                var id = sectionAtCenter();
+                if (id === current) return;
+                current = id;
+                var m = MIX[id], t = ctx.currentTime;
+                ['drone', 'rain', 'wind'].forEach(function(k) { layers[k].gain.setTargetAtTime(m[k], t, 1.2); });
+                layers.drum = m.drum;
+            }
+            var ticking = false;
+            window.addEventListener('scroll', function() {
+                if (ticking || !on) return;
+                ticking = true;
+                requestAnimationFrame(function() { applyMix(); ticking = false; });
+            }, { passive: true });
+
+            function setOn(v) {
+                on = v;
+                btn.classList.toggle('is-on', on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                btn.setAttribute('aria-label', on ? 'Couper le son' : 'Activer le son');
+                try { localStorage.setItem('orr-son', on ? '1' : '0'); } catch (e) {}
+                if (on) {
+                    if (!ctx) build();
+                    ctx.resume();
+                    master.gain.setTargetAtTime(.5, ctx.currentTime, .6);
+                    current = '';
+                    applyMix();
+                    chime();
+                    clearInterval(drumTimer); clearInterval(dropTimer);
+                    drumTimer = setInterval(function() { if (Math.random() < .6) drum(); }, 4200);
+                    dropTimer = setInterval(function() { if (layers.rain && layers.rain.gain.value > .15 && Math.random() < .7) drip(layers.rain.gain.value); }, 380);
+                } else if (ctx) {
+                    master.gain.setTargetAtTime(0, ctx.currentTime, .3);
+                    clearInterval(drumTimer); clearInterval(dropTimer);
+                    setTimeout(function() { if (!on) ctx.suspend(); }, 1500);
+                }
+            }
+            btn.addEventListener('click', function() { setOn(!on); });
+
+            // le visiteur avait déjà activé le son : on le relance à sa première interaction
+            var saved = false;
+            try { saved = localStorage.getItem('orr-son') === '1'; } catch (e) {}
+            if (saved) {
+                btn.classList.add('is-pending');
+                var resume = function(e) {
+                    window.removeEventListener('pointerdown', resume);
+                    window.removeEventListener('keydown', resume);
+                    btn.classList.remove('is-pending');
+                    // un clic sur le bouton lui-même est géré par le bouton
+                    if (e && e.target && e.target.closest && e.target.closest('.snd-btn')) return;
+                    if (!on) setOn(true);
+                };
+                window.addEventListener('pointerdown', resume);
+                window.addEventListener('keydown', resume);
+            }
+
+            window.addEventListener('orr:drop', plop);
+            document.addEventListener('visibilitychange', function() {
+                if (!ctx || !on) return;
+                if (document.hidden) ctx.suspend(); else ctx.resume();
+            });
         })();
     </script>
 </body>

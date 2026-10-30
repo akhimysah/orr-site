@@ -962,6 +962,11 @@
                 margin-right: -20px;
             }
         }
+        /* La transmission sur téléphone : sans frise au-dessus ni en dessous */
+        @media (max-width: 940px) {
+            .frise--bleed { display: none; }
+            .frise--bleed.frise--top + .theme-inline--wide { margin-top: 40px; margin-bottom: 60px; }
+        }
         /* dans Créations (contenu centré) : pleine largeur de l'écran */
         .frise--vw,
         .theme-inline.theme-inline--wide.theme-inline--crea {

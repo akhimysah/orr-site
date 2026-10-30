@@ -195,11 +195,24 @@
             transition: background .4s var(--ease), box-shadow .4s var(--ease), backdrop-filter .4s var(--ease);
         }
 
+        /* barre du haut toujours transparente : un léger halo garde logo et menu lisibles sur toutes les sections */
         .nav.scrolled {
-            background: rgba(250, 249, 246, 0.92);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            box-shadow: 0 1px 20px rgba(0, 0, 0, 0.04);
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            box-shadow: none;
+        }
+        .nav.scrolled .logo img {
+            filter: drop-shadow(0 0 6px rgba(250, 249, 246, .75)) !important;
+        }
+        .nav.scrolled .nav-links a {
+            text-shadow: 0 0 10px rgba(250, 249, 246, .95), 0 0 2px rgba(250, 249, 246, .9) !important;
+        }
+        .nav.scrolled .nav-burger,
+        .nav.scrolled .nav-cta {
+            background: rgba(250, 249, 246, .55) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
         }
 
         .nav-in {

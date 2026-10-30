@@ -1006,6 +1006,14 @@
             overflow: hidden;
             background: #8a4a24;
         }
+        /* ORR sur téléphone : 3 photos empilées à la place de l'image large */
+        .orr-stack { display: none; }
+        .orr-stack img { display: block; width: 100%; height: auto; }
+        @media (max-width: 940px) {
+            .orr-tri .orr-wide { display: none; }
+            .orr-stack { display: block; }
+        }
+
         /* ===== ORIGINES ===== */
         #origine {
             background: var(--cream);
@@ -3369,10 +3377,15 @@
             <div class="orr-tri-scroll">
                 <figure class="orr-wide reveal">
                     <picture>
-                    <source media="(max-width: 940px)" srcset="images/orr-essence-mobile.webp" width="941" height="1672" />
                     <img src="images/orr-essence.webp" width="1672" height="941" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens. C'est aussi la transmission : des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre. Mais ORR, c'est surtout une qualité de présence : une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
                     </picture>
                 </figure>
+                <!-- sur téléphone : les 3 photos l'une sous l'autre -->
+                <div class="orr-stack">
+                    <img class="reveal" src="images/orr-mobile-1.webp" width="1024" height="1536" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens." />
+                    <img class="reveal" src="images/orr-mobile-2.webp" width="1024" height="1536" loading="lazy" alt="ORR — C'est aussi la transmission. Des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre." />
+                    <img class="reveal" src="images/orr-mobile-3.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mais ORR, c'est surtout une qualité de présence. Une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
+                </div>
             </div>
         </section>
         <div class="frise" aria-hidden="true"></div>

@@ -946,42 +946,6 @@
             margin: 50px calc(50% - 50vw) 0;
         }
 
-        /* ===== DÉGRADÉ ROUGE → CRÈME ENTRE L'IMAGE ORR ET CRÉATIONS ===== */
-        .degrade-orr {
-            position: relative;
-            z-index: 2;
-            height: clamp(200px, 22vw, 320px);
-            margin-bottom: -80px;           /* se pose sur le haut de Créations */
-            pointer-events: none;
-            background: linear-gradient(to bottom,
-                rgb(72, 15, 8) 0%,
-                rgb(122, 42, 22) 18%,
-                rgb(168, 86, 48) 34%,
-                rgb(205, 145, 98) 50%,
-                rgb(226, 196, 166) 64%,
-                rgba(230, 212, 192, .85) 76%,
-                rgba(230, 212, 192, 0) 100%);
-            overflow: hidden;
-        }
-        /* reflet ambré qui défile lentement dans le dégradé */
-        .degrade-orr::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(100deg, rgba(255, 214, 160, 0) 30%, rgba(255, 214, 160, .28) 50%, rgba(255, 214, 160, 0) 70%);
-            background-size: 220% 100%;
-            animation: fxDegrade 9s ease-in-out infinite alternate;
-            -webkit-mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 60%, transparent);
-            mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 60%, transparent);
-        }
-        @keyframes fxDegrade {
-            from { background-position: 100% 0; }
-            to { background-position: 0% 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            .degrade-orr::after { animation: none; }
-        }
-
         /* ===== ORR EN UNE IMAGE ===== */
         .orr-tri {
             position: relative;
@@ -3356,7 +3320,6 @@
             </div>
         </section>
         <div class="frise" aria-hidden="true"></div>
-        <div class="degrade-orr" aria-hidden="true"></div>
 
         <!-- ===== CRÉATIONS AVEC IMAGE DE FOND ===== -->
         <section id="creations">

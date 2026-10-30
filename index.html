@@ -4227,8 +4227,10 @@
                     var hr = hero.getBoundingClientRect(), lr = logo.getBoundingClientRect();
                     var top = hr.top + (window.scrollY || window.pageYOffset);
                     W = document.documentElement.clientWidth;
-                    // du haut de page jusqu'au bas du manifeste (sections intermédiaires comprises)
-                    H = next ? Math.round(next.getBoundingClientRect().bottom - hr.top) : hero.offsetHeight;
+                    // la goutte s'arrête sur la frise berbère qui suit le haut de page
+                    var stop = document.querySelector('.hero ~ .frise') || document.querySelector('.frise');
+                    var stopY = stop ? stop.getBoundingClientRect().top + stop.offsetHeight / 2 - hr.top : hero.offsetHeight;
+                    H = Math.round(stopY + 80);
                     c.style.top = top + 'px';
                     c.style.width = W + 'px';
                     c.style.height = H + 'px';
@@ -4237,7 +4239,7 @@
                     k = lr.width / 528 || .2;
                     x0 = lr.left + 264 * k;
                     y0 = lr.top - hr.top + 494 * k;
-                    yEnd = H - 70;
+                    yEnd = H - 80;
                     // la goutte reste à l'écran : elle descend jusqu'à ~60 % de la hauteur de l'écran
                     S = Math.max(yEnd - window.innerHeight * .6, 200);
                 }
@@ -4373,10 +4375,11 @@
             })();
 
             // Pluie d'or sur la section Origines
-            (function goldRain(section) {
+            function goldRain(section, z) {
                 if (!section) return;
                 var c = document.createElement('canvas');
                 c.className = 'fx-goldrain';
+                c.style.zIndex = z;
                 c.setAttribute('aria-hidden', 'true');
                 section.appendChild(c);
                 var ctx = c.getContext('2d');
@@ -4467,7 +4470,13 @@
                     if (vis && !running) { running = true; raf = requestAnimationFrame(frame); }
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
                 }).observe(section);
-            })(document.getElementById('origine'));
+            }
+            // pluie d'or dans toutes les sections après le haut de page (derrière les textes)
+            goldRain(document.getElementById('manifeste'), 2);
+            goldRain(document.getElementById('origine'), 1);
+            goldRain(document.getElementById('creations'), 0);
+            goldRain(document.getElementById('fondatrice'), 1);
+            goldRain(document.getElementById('communaute'), 0);
 
             var ticking = false;
             function onScroll() {

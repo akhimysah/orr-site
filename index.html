@@ -1012,11 +1012,52 @@
             background: #8a4a24;
         }
         /* ORR sur téléphone : 3 photos empilées à la place de l'image large */
-        .orr-stack { display: none; }
-        .orr-stack img { display: block; width: 100%; height: auto; }
+        .orr-slider { display: none; position: relative; }
+        .orr-stack {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            overscroll-behavior-x: contain;
+        }
+        .orr-stack::-webkit-scrollbar { display: none; }
+        .orr-stack img {
+            display: block;
+            flex: 0 0 100%;
+            width: 100%;
+            height: auto;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+        .orr-dots {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 18px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .orr-dots button {
+            pointer-events: auto;
+            width: 8px;
+            height: 8px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--gold);
+            background: transparent;
+            transition: background .3s, width .3s, border-radius .3s;
+        }
+        .orr-dots button.is-active {
+            background: var(--gold);
+            width: 22px;
+            border-radius: 4px;
+        }
         @media (max-width: 940px) {
             .orr-tri .orr-wide { display: none; }
-            .orr-stack { display: block; }
+            .orr-slider { display: block; }
         }
 
         /* ===== ORIGINES ===== */
@@ -3385,11 +3426,14 @@
                     <img src="images/orr-essence.webp" width="1672" height="941" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens. C'est aussi la transmission : des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre. Mais ORR, c'est surtout une qualité de présence : une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
                     </picture>
                 </figure>
-                <!-- sur téléphone : les 3 photos l'une sous l'autre -->
-                <div class="orr-stack">
-                    <img class="reveal" src="images/orr-mobile-1.webp" width="1024" height="1536" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens." />
-                    <img class="reveal" src="images/orr-mobile-2.webp" width="1024" height="1536" loading="lazy" alt="ORR — C'est aussi la transmission. Des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre." />
-                    <img class="reveal" src="images/orr-mobile-3.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mais ORR, c'est surtout une qualité de présence. Une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
+                <!-- sur téléphone : les 3 photos en carrousel, on glisse du doigt -->
+                <div class="orr-slider reveal">
+                <div class="orr-stack" aria-label="ORR en 3 images">
+                    <img src="images/orr-mobile-1.webp" width="1024" height="1536" loading="lazy" alt="ORR — Ce sont des plantes, des huiles, des sels, des encens." />
+                    <img src="images/orr-mobile-2.webp" width="1024" height="1536" loading="lazy" alt="ORR — C'est aussi la transmission. Des formations pour celles et ceux qui souhaitent se reconnecter aux rituels, les retrouver, les réinventer et les transmettre." />
+                    <img src="images/orr-mobile-3.webp" width="1024" height="1536" loading="lazy" alt="ORR — Mais ORR, c'est surtout une qualité de présence. Une présence pleine de toi, de ce que tu aimes, de ce que tu portes, de ce que tu gardes des tiens, de tes ancêtres et de ta lignée. Parce que soigner, guérir, être soi, c'est être plein." />
+                </div>
+                <div class="orr-dots"><button type="button" class="is-active" aria-label="Image 1"></button><button type="button" aria-label="Image 2"></button><button type="button" aria-label="Image 3"></button></div>
                 </div>
             </div>
         </section>
@@ -4823,6 +4867,22 @@
                     if (!vis && running) { running = false; cancelAnimationFrame(raf); }
                 }).observe(section);
             })(document.getElementById('creations'));
+        })();
+    </script>
+    <!-- ===== CARROUSEL ORR (téléphone) ===== -->
+    <script>
+        (function() {
+            var track = document.querySelector('.orr-stack');
+            if (!track) return;
+            var dots = document.querySelectorAll('.orr-dots button');
+            function update() {
+                var i = Math.round(track.scrollLeft / track.clientWidth);
+                dots.forEach(function(d, k) { d.classList.toggle('is-active', k === i); });
+            }
+            track.addEventListener('scroll', function() { requestAnimationFrame(update); }, { passive: true });
+            dots.forEach(function(d, k) {
+                d.addEventListener('click', function() { track.scrollTo({ left: k * track.clientWidth, behavior: 'smooth' }); });
+            });
         })();
     </script>
     <!-- ===== FOND SONORE PAR SECTION (ambiances créées dans le navigateur, coupé par défaut) ===== -->

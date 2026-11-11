@@ -4955,11 +4955,8 @@
                 }).observe(section);
             }
             if (document.fonts && document.fonts.ready) document.fonts.ready.then(function() { fontsReady = true; });
-            // fumée de bkhoor dans les sections après le Manifeste (le Manifeste n'en a pas)
+            // fumée de bkhoor : seulement dans Origines, où elle sort des brûleurs des photos
             bkhoor(document.getElementById('origine'));
-            bkhoor(document.getElementById('creations'));
-            bkhoor(document.getElementById('fondatrice'));
-            bkhoor(document.getElementById('communaute'));
 
             var ticking = false;
             function onScroll() {

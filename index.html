@@ -4602,13 +4602,13 @@
                 wg.fillRect(0, 0, 64, 64);
                 return w;
             }
-            var SMOKE_RGB = '146, 141, 138';                 // gris de fumée d'encens
+            var SMOKE_RGB = '255, 252, 247';                 // fumée d'encens blanche
             var wisp = makeWisp(SMOKE_RGB);
             // d'où sort la fumée dans chaque photo d'Origines : le haut du brûleur à bkhoor, le bol
             // (positions en proportion de l'image : [gauche, haut])
             var BURNERS = {
                 'origine-1': [[.555, .57]],
-                'origine-2': [[.387, .5], [.5, .645]],             // haut du brûleur, puis le contenu du plat
+                'origine-2': [[.387, .5]],                         // seulement le haut du brûleur, à gauche (pas le plat)
                 'origine-3': [[.70, .5]],
                 'origine-4': [[.562, .52]]
             };
